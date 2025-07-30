@@ -17,7 +17,6 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.util.Collection;
@@ -32,8 +31,6 @@ public class PlayerSkinCommand {
                         MinecraftClient client = MinecraftClient.getInstance();
                         PlayerEntity sender = client.player;
                         if (sender == null || client.world == null) return 1;
-
-                        Vec3d pos = sender.getPos();
 
                         List<Entity> nearbyEntities = client.world.getEntitiesByClass(
                                 Entity.class,
