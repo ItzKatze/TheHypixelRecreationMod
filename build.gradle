@@ -1,6 +1,7 @@
 plugins {
 	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 version = project.mod_version
@@ -59,12 +60,18 @@ jar {
 	}
 }
 
+shadowJar {
+	archiveClassifier.set('')
+}
+
+build.dependsOn shadowJar
+
 // configure the maven publication
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
 			artifactId = project.archives_base_name
-			from components.java
+			artifact(tasks.shadowJar)
 		}
 	}
 
