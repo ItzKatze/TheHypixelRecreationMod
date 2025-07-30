@@ -62,6 +62,7 @@ jar {
 
 shadowJar {
 	archiveClassifier.set('')
+	zip64 = true
 }
 
 build.dependsOn shadowJar
