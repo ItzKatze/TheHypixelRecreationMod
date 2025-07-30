@@ -40,8 +40,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          automatic_release_tag: "latest"
-          title: "Automatic Build"
+          tag_name: ${{ github.sha }}
+          name: "Automatic Build"
           files: build/libs/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
