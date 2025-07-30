@@ -28,7 +28,6 @@ public class PlayerSkinCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("getSkins")
-                    .requires(source -> source.hasPermissionLevel(0))
                     .executes(context -> {
                         MinecraftClient client = MinecraftClient.getInstance();
                         PlayerEntity sender = client.player;
@@ -38,7 +37,7 @@ public class PlayerSkinCommand {
 
                         List<Entity> nearbyEntities = client.world.getEntitiesByClass(
                                 Entity.class,
-                                new Box(pos.add(-2, -2, -2), pos.add(2, 2, 2)),
+                                sender.getBoundingBox().expand(2),
                                 entity -> entity.getType() == EntityType.PLAYER
                         );
 

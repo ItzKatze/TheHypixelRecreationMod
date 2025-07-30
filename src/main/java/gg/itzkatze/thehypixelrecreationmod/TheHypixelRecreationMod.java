@@ -1,5 +1,6 @@
 package gg.itzkatze.thehypixelrecreationmod;
 
+import gg.itzkatze.thehypixelrecreationmod.commands.GetArmorStandArmorColorsCommand;
 import gg.itzkatze.thehypixelrecreationmod.commands.PlayerSkinCommand;
 import net.fabricmc.api.ClientModInitializer;
 
@@ -14,5 +15,6 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 	public void onInitializeClient() {
 		LOGGER.info("Initialized");
 		PlayerSkinCommand.register();
+		GetArmorStandArmorColorsCommand.register();
 	}
 }
