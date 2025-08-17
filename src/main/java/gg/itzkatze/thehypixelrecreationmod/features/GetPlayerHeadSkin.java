@@ -23,22 +23,22 @@ public class GetPlayerHeadSkin {
         if (client.player == null) return;
 
         ItemStack hoveredStack = GUIUtils.getHoveredItem(client);
-        ChatUtils.sendMessage(client, "Hovered: " + hoveredStack.getItem().toString());
+        ChatUtils.message("Hovered: " + hoveredStack.getItem().toString());
 
         if (!hoveredStack.isOf(Items.PLAYER_HEAD)) {
-            ChatUtils.sendMessage(client, "Hovered item is not a player head.");
+            ChatUtils.message("Hovered item is not a player head.");
             return;
         }
 
         ProfileComponent profileComp = hoveredStack.get(DataComponentTypes.PROFILE);
         if (profileComp == null) {
-            ChatUtils.sendMessage(client, "No player profile found.");
+            ChatUtils.message("No player profile found.");
             return;
         }
 
         GameProfile profile = profileComp.gameProfile();
         if (profile == null) {
-            ChatUtils.sendMessage(client, "Profile is empty.");
+            ChatUtils.message("Profile is empty.");
             return;
         }
 
@@ -49,7 +49,7 @@ public class GetPlayerHeadSkin {
                 .orElse(null);
 
         if (textureProp == null || textureProp.value().isEmpty()) {
-            ChatUtils.sendMessage(client, "No texture property found.");
+            ChatUtils.message("No texture property found.");
             return;
         }
 
@@ -59,7 +59,7 @@ public class GetPlayerHeadSkin {
             String url = (start >= 0) ? json.substring(start, json.indexOf('"', start)) : "<no URL>";
 
             if (url.equals("<no URL>")) {
-                ChatUtils.sendMessage(client, "No URL found in decoded texture.");
+                ChatUtils.message("No URL found in decoded texture.");
                 return;
             }
 
@@ -77,7 +77,7 @@ public class GetPlayerHeadSkin {
                             .withClickEvent(new ClickEvent.CopyToClipboard(textureId))
                     ), false);
         } catch (Exception ex) {
-            ChatUtils.sendMessage(client, "Error decoding texture: " + ex.getMessage());
+            ChatUtils.message("Error decoding texture: " + ex.getMessage());
         }
     }
 }

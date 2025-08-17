@@ -4,7 +4,6 @@ import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
@@ -14,12 +13,14 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class GetArmorStandArmorColorsCommand {
+public class GetArmorStandInfos {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getArmorStandColors")
+            dispatcher.register(ClientCommandManager.literal("getArmorStandInfos")
                     .executes(context -> {
                         MinecraftClient client = MinecraftClient.getInstance();
                         PlayerEntity player = client.player;
@@ -47,32 +48,30 @@ public class GetArmorStandArmorColorsCommand {
     }
 
     private static void processArmorStand(MinecraftClient client, ArmorStandEntity armorStand) {
-        ItemStack[] slots = new ItemStack[] {
-                armorStand.getEquippedStack(EquipmentSlot.HEAD),
-                armorStand.getEquippedStack(EquipmentSlot.CHEST),
-                armorStand.getEquippedStack(EquipmentSlot.LEGS),
-                armorStand.getEquippedStack(EquipmentSlot.FEET),
-        };
+
+        Map<String, ItemStack> stacks = new HashMap<>();
+        stacks.put("Head", armorStand.getEquippedStack(EquipmentSlot.HEAD));
+        stacks.put("Chest", armorStand.getEquippedStack(EquipmentSlot.CHEST));
+        stacks.put("Legs", armorStand.getEquippedStack(EquipmentSlot.LEGS));
+        stacks.put("Feet", armorStand.getEquippedStack(EquipmentSlot.FEET));
+        stacks.put("Mainhand", armorStand.getEquippedStack(EquipmentSlot.MAINHAND));
+        stacks.put("Offhand", armorStand.getEquippedStack(EquipmentSlot.OFFHAND));
 
         ChatUtils.sendLine();
 
-        for (ItemStack stack : slots) {
-            if (stack.isEmpty()) continue;
+        Text colorMessage = Text.literal("Cords: X: " + armorStand.getX() + " Y: " + armorStand.getY() + " Z: " + armorStand.getZ() + " Yaw: " + armorStand.getYaw() + " Pitch: " + armorStand.getPitch())
+                .setStyle(Style.EMPTY
+                        .withClickEvent(new ClickEvent.CopyToClipboard(armorStand.getX() + ", " + armorStand.getY() + ", " + armorStand.getZ() + ", " + armorStand.getYaw() + ", " + armorStand.getPitch()))
+                );
+        client.player.sendMessage(colorMessage, false);
 
-            int color = DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR);
-            if (color != DyedColorComponent.DEFAULT_COLOR) {
-                int red = (color >> 16) & 0xFF;
-                int green = (color >> 8) & 0xFF;
-                int blue = color & 0xFF;
+        for (Map.Entry<String, ItemStack> stack : stacks.entrySet()) {
+            String name = stack.getKey();
+            ItemStack itemStack = stack.getValue();
 
-                Text colorMessage = Text.literal("Copy Color (click)")
-                        .setStyle(Style.EMPTY
-                                .withClickEvent(new ClickEvent.CopyToClipboard(red + ", " + green + ", " + blue))
-                                .withColor(color)
-                        );
-                client.player.sendMessage(stack.getItemName(), false);
-                client.player.sendMessage(colorMessage, false);
-            }
+            if (itemStack.isEmpty()) continue;
+
+            ChatUtils.message(name + ": " + itemStack.getItem().getName());
         }
 
         ChatUtils.sendLine();

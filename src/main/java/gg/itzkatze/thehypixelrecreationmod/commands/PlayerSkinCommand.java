@@ -2,6 +2,7 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
@@ -23,7 +24,6 @@ import java.util.Collection;
 import java.util.List;
 
 public class PlayerSkinCommand {
-
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("getSkins")
@@ -39,7 +39,7 @@ public class PlayerSkinCommand {
                         );
 
                         if (nearbyEntities.isEmpty()) {
-                            sender.sendMessage(Text.literal("No players found nearby."), false);
+                            ChatUtils.warn("No players found nearby.");
                             return 1;
                         }
 
@@ -67,17 +67,11 @@ public class PlayerSkinCommand {
                                                     .withColor(TextColor.fromFormatting(Formatting.AQUA))
                                             );
 
-                                    Text line = Text.literal("------------------------------------")
-                                            .setStyle(Style.EMPTY
-                                                    .withBold(true)
-                                                    .withColor(TextColor.fromFormatting(Formatting.GOLD))
-                                            );
-
-                                    sender.sendMessage(line, false);
+                                    ChatUtils.sendLine();
                                     sender.sendMessage(Text.literal("Skin data for ").append(name), false);
                                     sender.sendMessage(textureMessage, false);
                                     sender.sendMessage(signatureMessage, false);
-                                    sender.sendMessage(line, false);
+                                    ChatUtils.sendLine();
                                 } else {
                                     sender.sendMessage(Text.literal("No skin data for " + name), false);
                                 }
