@@ -1,6 +1,8 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
@@ -9,9 +11,12 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
+import net.minecraft.util.Formatting;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,28 +26,31 @@ public class GetArmorStandInfos {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("getArmorStandInfos")
-                    .executes(context -> {
-                        MinecraftClient client = MinecraftClient.getInstance();
-                        PlayerEntity player = client.player;
-                        if (player == null || client.world == null) return 1;
+                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                            .executes(context -> {
+                                double radius = DoubleArgumentType.getDouble(context, "radius");
+                                MinecraftClient client = MinecraftClient.getInstance();
+                                PlayerEntity player = client.player;
+                                if (player == null || client.world == null) return 1;
 
-                        List<ArmorStandEntity> armorStands = client.world.getEntitiesByClass(
-                                ArmorStandEntity.class,
-                                player.getBoundingBox().expand(2),
-                                armorStandEntity -> armorStandEntity.getType() == EntityType.ARMOR_STAND
-                        );
+                                List<ArmorStandEntity> armorStands = client.world.getEntitiesByClass(
+                                        ArmorStandEntity.class,
+                                        player.getBoundingBox().expand(radius),
+                                        armorStandEntity -> armorStandEntity.getType() == EntityType.ARMOR_STAND
+                                );
 
-                        if (armorStands.isEmpty()) {
-                            ChatUtils.warn("No armor stands found nearby.");
-                            return 1;
-                        }
+                                if (armorStands.isEmpty()) {
+                                    ChatUtils.warn("No armor stands found nearby.");
+                                    return 1;
+                                }
 
-                        for (ArmorStandEntity armorStand : armorStands) {
-                            processArmorStand(client, armorStand);
-                        }
+                                for (ArmorStandEntity armorStand : armorStands) {
+                                    processArmorStand(client, armorStand);
+                                }
 
-                        return 1;
-                    })
+                                return 1;
+                            })
+                    )
             );
         });
     }
@@ -72,6 +80,19 @@ public class GetArmorStandInfos {
             if (itemStack.isEmpty()) continue;
 
             ChatUtils.message(name + ": " + itemStack.getItem().getName());
+            if (itemStack.getItem() == Items.PLAYER_HEAD) {
+                String textureID = ItemStackUtils.getPlayerHeadTexture(itemStack);
+                client.keyboard.setClipboard(textureID);
+
+                client.player.sendMessage(Text.literal("Copied Texture-ID: ")
+                        .setStyle(Style.EMPTY
+                                .withColor(TextColor.fromFormatting(Formatting.AQUA))
+                        ), false);
+                client.player.sendMessage(Text.literal(textureID)
+                        .setStyle(Style.EMPTY
+                                .withClickEvent(new ClickEvent.CopyToClipboard(textureID))
+                        ), false);
+            }
         }
 
         ChatUtils.sendLine();

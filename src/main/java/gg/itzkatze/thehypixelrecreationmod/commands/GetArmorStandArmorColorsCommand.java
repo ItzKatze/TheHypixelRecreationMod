@@ -1,5 +1,6 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -20,28 +21,31 @@ public class GetArmorStandArmorColorsCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("getArmorStandColors")
-                    .executes(context -> {
-                        MinecraftClient client = MinecraftClient.getInstance();
-                        PlayerEntity player = client.player;
-                        if (player == null || client.world == null) return 1;
+                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                            .executes(context -> {
+                                double radius = DoubleArgumentType.getDouble(context, "radius");
+                                MinecraftClient client = MinecraftClient.getInstance();
+                                PlayerEntity player = client.player;
+                                if (player == null || client.world == null) return 1;
 
-                        List<ArmorStandEntity> armorStands = client.world.getEntitiesByClass(
-                                ArmorStandEntity.class,
-                                player.getBoundingBox().expand(2),
-                                armorStandEntity -> armorStandEntity.getType() == EntityType.ARMOR_STAND
-                        );
+                                List<ArmorStandEntity> armorStands = client.world.getEntitiesByClass(
+                                        ArmorStandEntity.class,
+                                        player.getBoundingBox().expand(radius),
+                                        armorStandEntity -> armorStandEntity.getType() == EntityType.ARMOR_STAND
+                                );
 
-                        if (armorStands.isEmpty()) {
-                            ChatUtils.warn("No armor stands found nearby.");
-                            return 1;
-                        }
+                                if (armorStands.isEmpty()) {
+                                    ChatUtils.warn("No armor stands found nearby.");
+                                    return 1;
+                                }
 
-                        for (ArmorStandEntity armorStand : armorStands) {
-                            processArmorStand(client, armorStand);
-                        }
+                                for (ArmorStandEntity armorStand : armorStands) {
+                                    processArmorStand(client, armorStand);
+                                }
 
-                        return 1;
-                    })
+                                return 1;
+                            })
+                    )
             );
         });
     }

@@ -4,8 +4,8 @@ A Mod which is used for the Hypixel Recreation Project which can be found [HERE]
 Current Minecraft Version: 1.21.5
 
 ## Features
-- `/getSkins` Gets the information of player's or npc's skins in a 2 block radius.
-- `/getArmorStandColors` Gets the color information of armor stands in a 2 block radius.
-- `/getArmorStandInfos` Gets the position information of armor stands in a 2 block radius. (wip)
+- `/getSkins <radius>` Gets the information of player's or npc's skins in the defined radius.
+- `/getArmorStandColors <radius>` Gets the color information of armor stands in the defined radius.
+- `/getArmorStandInfos <radius>` Gets the position information of armor stands in the defined radius. (wip)
 - `/getScoreboardInfo` Prints out the scoreboard information in chat.
 - `Keybind K` Copies the texture ID of the hovered player head into the clipboard.
