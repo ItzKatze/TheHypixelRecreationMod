@@ -48,6 +48,8 @@ public class GetArmorStandInfos {
                                     processArmorStand(client, armorStand);
                                 }
 
+                                ChatUtils.message("Total amount of armor stands: " + armorStands.size());
+
                                 return 1;
                             })
                     )
