@@ -10,6 +10,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class KeybindRegistry implements ClientModInitializer {
     public static KeyBinding checkSkinKey;
+    public static KeyBinding copyLoreKey;
 
     @Override
     public void onInitializeClient() {
@@ -20,11 +21,22 @@ public class KeybindRegistry implements ClientModInitializer {
                 "category.thehypixelrecreationmod"
         ));
 
+        copyLoreKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.copylore",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_L,
+                "category.thehypixelrecreationmod"
+        ));
+
         //Check keybinds inside of gui's
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
             ScreenKeyboardEvents.allowKeyPress(screen).register((screen1, key, scancode, modifiers) -> {
                 if (KeybindRegistry.checkSkinKey.matchesKey(key, scancode)) {
                     GetPlayerHeadSkin.checkHoveredItemForSkin(client);
+                    return false;
+                }
+                if (KeybindRegistry.copyLoreKey.matchesKey(key, scancode)) {
+                    CopyLoreFromItem.copyLore(client);
                     return false;
                 }
                 return true;

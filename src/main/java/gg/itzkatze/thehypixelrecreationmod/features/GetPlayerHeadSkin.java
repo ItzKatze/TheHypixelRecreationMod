@@ -1,6 +1,5 @@
 package gg.itzkatze.thehypixelrecreationmod.features;
 
-import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.GUIUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import net.minecraft.client.MinecraftClient;

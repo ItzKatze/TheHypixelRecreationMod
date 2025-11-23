@@ -4,10 +4,14 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ProfileComponent;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.text.Text;
 
 import java.util.Base64;
+import java.util.List;
+import java.util.ArrayList;
 
 public class ItemStackUtils {
 
@@ -61,5 +65,30 @@ public class ItemStackUtils {
             ChatUtils.message("Error decoding texture: " + ex.getMessage());
         }
         return textureID;
+    }
+
+    /**
+     * Gets the lore from an ItemStack as a list of Text components.
+     * Returns an empty list if no lore is present.
+     */
+    public static List<Text> getLore(ItemStack stack) {
+        LoreComponent loreComponent = stack.get(DataComponentTypes.LORE);
+        if (loreComponent == null) {
+            return new ArrayList<>();
+        }
+        return loreComponent.lines();
+    }
+
+    /**
+     * Gets the lore from an ItemStack as a list of plain strings.
+     * Returns an empty list if no lore is present.
+     */
+    public static List<String> getLoreAsStrings(ItemStack stack) {
+        List<Text> loreLines = getLore(stack);
+        List<String> result = new ArrayList<>();
+        for (Text line : loreLines) {
+            result.add(StringUtilities.toLegacyString(line));
+        }
+        return result;
     }
 }

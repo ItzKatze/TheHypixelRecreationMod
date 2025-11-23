@@ -9,12 +9,9 @@ import net.minecraft.scoreboard.*;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 public class GetScoreboardInfo {
     public static void register() {
