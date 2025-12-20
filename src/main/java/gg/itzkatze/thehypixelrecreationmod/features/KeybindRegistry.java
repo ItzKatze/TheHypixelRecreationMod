@@ -11,6 +11,8 @@ import org.lwjgl.glfw.GLFW;
 public class KeybindRegistry implements ClientModInitializer {
     public static KeyBinding checkSkinKey;
     public static KeyBinding copyLoreKey;
+    public static KeyBinding copyChatKey;
+    private static boolean chatCopyPressed = false;
 
     @Override
     public void onInitializeClient() {
@@ -28,7 +30,14 @@ public class KeybindRegistry implements ClientModInitializer {
                 "category.thehypixelrecreationmod"
         ));
 
-        //Check keybinds inside of gui's
+        copyChatKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.copychat",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_P,
+                "category.thehypixelrecreationmod"
+        ));
+
+        //Check keybinds inside GUI's
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
             ScreenKeyboardEvents.allowKeyPress(screen).register((screen1, key, scancode, modifiers) -> {
                 if (KeybindRegistry.checkSkinKey.matchesKey(key, scancode)) {
@@ -39,8 +48,20 @@ public class KeybindRegistry implements ClientModInitializer {
                     CopyLoreFromItem.copyLore(client);
                     return false;
                 }
+                if (KeybindRegistry.copyChatKey.matchesKey(key, scancode)) {
+                    chatCopyPressed = true;
+                    return false;
+                }
                 return true;
             });
         });
+    }
+
+    public static boolean wasChatCopyPressed() {
+        if (chatCopyPressed) {
+            chatCopyPressed = false;
+            return true;
+        }
+        return false;
     }
 }

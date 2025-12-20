@@ -3,6 +3,7 @@ package gg.itzkatze.thehypixelrecreationmod.features;
 import gg.itzkatze.thehypixelrecreationmod.utils.GUIUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
@@ -13,6 +14,7 @@ import net.minecraft.util.Formatting;
 public class GetPlayerHeadSkin {
     public static void checkHoveredItemForSkin(MinecraftClient client) {
         if (client.player == null) return;
+        if (!(client.currentScreen instanceof HandledScreen<?> screen)) return;
 
         ItemStack hoveredStack = GUIUtils.getHoveredItem(client);
         String textureID = ItemStackUtils.getPlayerHeadTexture(hoveredStack);
