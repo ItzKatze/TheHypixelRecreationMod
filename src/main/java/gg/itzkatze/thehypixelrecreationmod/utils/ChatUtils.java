@@ -1,61 +1,59 @@
 package gg.itzkatze.thehypixelrecreationmod.utils;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 public class ChatUtils {
 
     public static void sendLine() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
-        client.player.sendMessage(Text.literal("------------------------------------")
-                .setStyle(Style.EMPTY
-                        .withBold(true)
-                        .withColor(TextColor.fromFormatting(Formatting.GOLD))
-                ), false
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+        mc.player.displayClientMessage(
+                Component.literal("------------------------------------")
+                        .withStyle(Style.EMPTY.withBold(true).withColor(TextColor.fromRgb(0xFFD700))),
+                false
         );
     }
 
     public static void message(String message) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        client.player.sendMessage(Text.literal(message), false);
+        mc.player.displayClientMessage(Component.literal(message), false);
     }
 
     public static void log(String message) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        client.player.sendMessage(Text.literal(message)
-                .setStyle(Style.EMPTY
-                        .withColor(TextColor.fromFormatting(Formatting.GRAY))
-                ), false
+        mc.player.displayClientMessage(
+                Component.literal(message)
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x808080))),
+                false
         );
     }
 
     public static void error(String message) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        client.player.sendMessage(Text.literal(message)
-                .setStyle(Style.EMPTY
-                        .withColor(TextColor.fromFormatting(Formatting.RED))
-                ), false
+        mc.player.displayClientMessage(
+                Component.literal(message)
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000))),
+                false
         );
     }
 
     public static void warn(String message) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        client.player.sendMessage(Text.literal(message)
-                .setStyle(Style.EMPTY
-                        .withColor(TextColor.fromFormatting(Formatting.YELLOW))
-                ), false
+        mc.player.displayClientMessage(
+                Component.literal(message)
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFF00))),
+                false
         );
     }
 }

@@ -4,51 +4,47 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 
 public class KeybindRegistry implements ClientModInitializer {
-    public static KeyBinding checkSkinKey;
-    public static KeyBinding copyLoreKey;
-    public static KeyBinding copyChatKey;
+    public static KeyMapping checkSkinKey;
+    public static KeyMapping copyLoreKey;
+    public static KeyMapping copyChatKey;
     private static boolean chatCopyPressed = false;
 
     @Override
     public void onInitializeClient() {
-        checkSkinKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.copyplayerheadskin",
-                InputUtil.Type.KEYSYM,
+        checkSkinKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.thehypixelrecreationmod.copyplayerheadskin",
                 GLFW.GLFW_KEY_K,
-                "category.thehypixelrecreationmod"
+                KeyMapping.Category.MISC
         ));
 
-        copyLoreKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.copylore",
-                InputUtil.Type.KEYSYM,
+        copyLoreKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.thehypixelrecreationmod.copylore",
                 GLFW.GLFW_KEY_L,
-                "category.thehypixelrecreationmod"
+                KeyMapping.Category.MISC
         ));
 
-        copyChatKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.copychat",
-                InputUtil.Type.KEYSYM,
+        copyChatKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.thehypixelrecreationmod.copychat",
                 GLFW.GLFW_KEY_P,
-                "category.thehypixelrecreationmod"
+                KeyMapping.Category.MISC
         ));
 
-        //Check keybinds inside GUI's
-        ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
-            ScreenKeyboardEvents.allowKeyPress(screen).register((screen1, key, scancode, modifiers) -> {
-                if (KeybindRegistry.checkSkinKey.matchesKey(key, scancode)) {
+        // Check keybinds inside of GUI's
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            ScreenKeyboardEvents.allowKeyPress(screen).register((scancode, key) -> {
+                if (checkSkinKey.matches(key)) {
                     GetPlayerHeadSkin.checkHoveredItemForSkin(client);
                     return false;
                 }
-                if (KeybindRegistry.copyLoreKey.matchesKey(key, scancode)) {
+                if (copyLoreKey.matches(key)) {
                     CopyLoreFromItem.copyLore(client);
                     return false;
                 }
-                if (KeybindRegistry.copyChatKey.matchesKey(key, scancode)) {
+                if (copyChatKey.matches(key)) {
                     chatCopyPressed = true;
                     return false;
                 }

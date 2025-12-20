@@ -2,12 +2,11 @@ package gg.itzkatze.thehypixelrecreationmod.utils;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.component.ItemLore;
 
 import java.util.Base64;
 import java.util.List;
@@ -18,24 +17,13 @@ public class ItemStackUtils {
     public static String getPlayerHeadTexture(ItemStack stack) {
         String textureID = "";
 
-        if (!stack.isOf(Items.PLAYER_HEAD)) {
-            ChatUtils.message("Hovered item is not a player head.");
+        if (!stack.is(Items.PLAYER_HEAD)) {
             return textureID;
         }
 
-        ProfileComponent profileComp = stack.get(DataComponentTypes.PROFILE);
-        if (profileComp == null) {
-            ChatUtils.message("No player profile found.");
-            return textureID;
-        }
+        GameProfile profile = stack.get(DataComponents.PROFILE).partialProfile();
 
-        GameProfile profile = profileComp.gameProfile();
-        if (profile == null) {
-            ChatUtils.message("Profile is empty.");
-            return textureID;
-        }
-
-        Property textureProp = profile.getProperties()
+        Property textureProp = profile.properties()
                 .get("textures")
                 .stream()
                 .findFirst()
@@ -71,8 +59,8 @@ public class ItemStackUtils {
      * Gets the lore from an ItemStack as a list of Text components.
      * Returns an empty list if no lore is present.
      */
-    public static List<Text> getLore(ItemStack stack) {
-        LoreComponent loreComponent = stack.get(DataComponentTypes.LORE);
+    public static List<Component> getLore(ItemStack stack) {
+        ItemLore loreComponent = stack.get(DataComponents.LORE);
         if (loreComponent == null) {
             return new ArrayList<>();
         }
@@ -84,10 +72,10 @@ public class ItemStackUtils {
      * Returns an empty list if no lore is present.
      */
     public static List<String> getLoreAsStrings(ItemStack stack) {
-        List<Text> loreLines = getLore(stack);
+        List<Component> loreLines = getLore(stack);
         List<String> result = new ArrayList<>();
-        for (Text line : loreLines) {
-            result.add(StringUtilities.toLegacyString(line));
+        for (Component line : loreLines) {
+            result.add(StringUtility.toLegacyString(line));
         }
         return result;
     }

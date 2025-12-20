@@ -1,72 +1,109 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import gg.itzkatze.thehypixelrecreationmod.utils.StringUtilities;
+import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.scoreboard.*;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.PlayerScoreEntry;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 
 import java.util.Comparator;
 import java.util.List;
 
 public class GetScoreboardInfo {
+
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getscoreboardinfo")
-                    .executes(ctx -> {
-                        MinecraftClient client = MinecraftClient.getInstance();
-                        if (client.world == null || client.player == null) return 1;
+            dispatcher.register(
+                    ClientCommandManager.literal("getscoreboardinfo")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                if (client.level == null || client.player == null) return 1;
 
-                        Scoreboard board = client.world.getScoreboard();
-                        ScoreboardObjective objective = board.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
-                        if (objective == null) {
-                            ChatUtils.warn("No sidebar scoreboard found.");
-                            return 1;
-                        }
+                                Scoreboard scoreboard = client.level.getScoreboard();
+                                Objective objective = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
+                                if (objective == null) {
+                                    ChatUtils.warn("No sidebar scoreboard found.");
+                                    return 1;
+                                }
 
-                        List<ScoreboardEntry> entries = board.getScoreboardEntries(objective).stream()
-                                .sorted(Comparator.comparingInt(ScoreboardEntry::value).reversed())
-                                .toList();
+                                List<PlayerScoreEntry> entries = scoreboard
+                                        .listPlayerScores(objective)
+                                        .stream()
+                                        .sorted(
+                                                Comparator.comparingInt(PlayerScoreEntry::value).reversed()
+                                        )
+                                        .toList();
 
-                        if (entries.isEmpty()) {
-                            ChatUtils.warn("Sidebar scoreboard is empty.");
-                            return 1;
-                        }
+                                if (entries.isEmpty()) {
+                                    ChatUtils.warn("Sidebar scoreboard is empty.");
+                                    return 1;
+                                }
 
-                        ChatUtils.sendLine();
+                                ChatUtils.sendLine();
 
-                        client.player.sendMessage(Text.empty()
-                                .append(objective.getDisplayName())
-                                .setStyle(Style.EMPTY.withClickEvent(new ClickEvent.CopyToClipboard(StringUtilities.toLegacyString(objective.getDisplayName())))), false);
+                                client.player.displayClientMessage(
+                                        Component.empty()
+                                                .append(objective.getDisplayName())
+                                                .withStyle(
+                                                        Style.EMPTY.withClickEvent(
+                                                                new ClickEvent.CopyToClipboard(
+                                                                        StringUtility.toLegacyString(
+                                                                                objective.getDisplayName()
+                                                                        )
+                                                                )
+                                                        )
+                                                ),
+                                        false
+                                );
 
-                        for (ScoreboardEntry scoreboardEntry : entries) {
-                            Text line = renderEntry(board, scoreboardEntry);
-                            String legacyLine = StringUtilities.toLegacyString(line);
+                                for (PlayerScoreEntry entry : entries) {
+                                    Component line = renderEntry(scoreboard, entry);
+                                    String legacy = StringUtility.toLegacyString(line);
 
-                            Text clickable = Text.empty()
-                                    .append(line)
-                                    .setStyle(Style.EMPTY.withClickEvent(new ClickEvent.CopyToClipboard(legacyLine)));
-                            client.player.sendMessage(clickable, false);
-                        }
+                                    client.player.displayClientMessage(
+                                            Component.empty()
+                                                    .append(line)
+                                                    .withStyle(
+                                                            Style.EMPTY.withClickEvent(
+                                                                    new ClickEvent.CopyToClipboard(legacy)
+                                                            )
+                                                    ),
+                                            false
+                                    );
+                                }
 
-                        ChatUtils.sendLine();
-
-                        return 1;
-                    }));
+                                ChatUtils.sendLine();
+                                return 1;
+                            })
+            );
         });
     }
 
-    private static Text renderEntry(Scoreboard board, ScoreboardEntry e) {
-        Text base = e.display() != null ? e.display() : Text.literal(e.owner());
+    private static Component renderEntry(
+            Scoreboard scoreboard,
+            PlayerScoreEntry entry
+    ) {
+        Component base =
+                entry.display() != null
+                        ? entry.display()
+                        : Component.literal(entry.owner());
 
-        Team team = board.getScoreHolderTeam(e.owner());
+        PlayerTeam team = scoreboard.getPlayersTeam(entry.owner());
         if (team != null) {
-            return Text.empty().append(team.getPrefix()).append(base).append(team.getSuffix());
+            return Component.empty()
+                    .append(team.getPlayerPrefix())
+                    .append(base)
+                    .append(team.getPlayerSuffix());
         }
+
         return base;
     }
 }

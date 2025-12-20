@@ -25,7 +25,8 @@
 		"fabricloader": ">=0.16.14",
 		"minecraft": "~1.21.4",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"hypixel-mod-api": ">=1.0.1"
 	},
 	"suggests": {
 		"another-mod": "*"

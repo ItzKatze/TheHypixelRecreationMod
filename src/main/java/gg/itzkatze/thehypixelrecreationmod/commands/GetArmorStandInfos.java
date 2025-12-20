@@ -5,18 +5,17 @@ import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,75 +24,104 @@ import java.util.Map;
 public class GetArmorStandInfos {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getarmorstandinfos")
-                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
-                            .executes(context -> {
-                                double radius = DoubleArgumentType.getDouble(context, "radius");
-                                MinecraftClient client = MinecraftClient.getInstance();
-                                PlayerEntity player = client.player;
-                                if (player == null || client.world == null) return 1;
+            dispatcher.register(
+                    ClientCommandManager.literal("getarmorstandinfos")
+                            .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                                    .executes(context -> {
+                                        double radius = DoubleArgumentType.getDouble(context, "radius");
+                                        Minecraft client = Minecraft.getInstance();
+                                        Player player = client.player;
 
-                                List<ArmorStandEntity> armorStands = client.world.getEntitiesByClass(
-                                        ArmorStandEntity.class,
-                                        player.getBoundingBox().expand(radius),
-                                        armorStandEntity -> armorStandEntity.getType() == EntityType.ARMOR_STAND
-                                );
+                                        if (player == null || client.level == null) return 1;
 
-                                if (armorStands.isEmpty()) {
-                                    ChatUtils.warn("No armor stands found nearby.");
-                                    return 1;
-                                }
+                                        List<ArmorStand> armorStands = client.level.getEntities(
+                                                EntityType.ARMOR_STAND,
+                                                player.getBoundingBox().inflate(radius),
+                                                armorStand -> true
+                                        );
 
-                                for (ArmorStandEntity armorStand : armorStands) {
-                                    processArmorStand(client, armorStand);
-                                }
+                                        if (armorStands.isEmpty()) {
+                                            ChatUtils.warn("No armor stands found nearby.");
+                                            return 1;
+                                        }
 
-                                ChatUtils.message("Total amount of armor stands: " + armorStands.size());
+                                        for (ArmorStand armorStand : armorStands) {
+                                            processArmorStand(client, armorStand);
+                                        }
 
-                                return 1;
-                            })
-                    )
+                                        ChatUtils.message(
+                                                "Total amount of armor stands: " + armorStands.size()
+                                        );
+
+                                        return 1;
+                                    })
+                            )
             );
         });
     }
 
-    private static void processArmorStand(MinecraftClient client, ArmorStandEntity armorStand) {
-
+    private static void processArmorStand(Minecraft client, ArmorStand armorStand) {
         Map<String, ItemStack> stacks = new HashMap<>();
-        stacks.put("Head", armorStand.getEquippedStack(EquipmentSlot.HEAD));
-        stacks.put("Chest", armorStand.getEquippedStack(EquipmentSlot.CHEST));
-        stacks.put("Legs", armorStand.getEquippedStack(EquipmentSlot.LEGS));
-        stacks.put("Feet", armorStand.getEquippedStack(EquipmentSlot.FEET));
-        stacks.put("Mainhand", armorStand.getEquippedStack(EquipmentSlot.MAINHAND));
-        stacks.put("Offhand", armorStand.getEquippedStack(EquipmentSlot.OFFHAND));
+        stacks.put("Head", armorStand.getItemBySlot(EquipmentSlot.HEAD));
+        stacks.put("Chest", armorStand.getItemBySlot(EquipmentSlot.CHEST));
+        stacks.put("Legs", armorStand.getItemBySlot(EquipmentSlot.LEGS));
+        stacks.put("Feet", armorStand.getItemBySlot(EquipmentSlot.FEET));
+        stacks.put("Mainhand", armorStand.getItemBySlot(EquipmentSlot.MAINHAND));
+        stacks.put("Offhand", armorStand.getItemBySlot(EquipmentSlot.OFFHAND));
 
         ChatUtils.sendLine();
 
-        Text colorMessage = Text.literal("Cords: X: " + armorStand.getX() + " Y: " + armorStand.getY() + " Z: " + armorStand.getZ() + " Yaw: " + armorStand.getYaw() + " Pitch: " + armorStand.getPitch())
-                .setStyle(Style.EMPTY
-                        .withClickEvent(new ClickEvent.CopyToClipboard(armorStand.getX() + ", " + armorStand.getY() + ", " + armorStand.getZ() + ", " + armorStand.getYaw() + ", " + armorStand.getPitch()))
+        Player player = client.player;
+        if (player == null) return;
+
+        Component coordsMessage = Component.literal(
+                        "Cords: X: " + armorStand.getX()
+                                + " Y: " + armorStand.getY()
+                                + " Z: " + armorStand.getZ()
+                                + " Yaw: " + armorStand.getYRot()
+                                + " Pitch: " + armorStand.getXRot()
+                )
+                .withStyle(
+                        Style.EMPTY.withClickEvent(
+                                new ClickEvent.CopyToClipboard(
+                                        armorStand.getX() + ", "
+                                                + armorStand.getY() + ", "
+                                                + armorStand.getZ() + ", "
+                                                + armorStand.getYRot() + ", "
+                                                + armorStand.getXRot()
+                                )
+                        )
                 );
-        client.player.sendMessage(colorMessage, false);
 
-        for (Map.Entry<String, ItemStack> stack : stacks.entrySet()) {
-            String name = stack.getKey();
-            ItemStack itemStack = stack.getValue();
+        player.displayClientMessage(coordsMessage, false);
 
-            if (itemStack.isEmpty()) continue;
+        for (Map.Entry<String, ItemStack> entry : stacks.entrySet()) {
+            String name = entry.getKey();
+            ItemStack stack = entry.getValue();
 
-            ChatUtils.message(name + ": " + itemStack.getItem().getName());
-            if (itemStack.getItem() == Items.PLAYER_HEAD) {
-                String textureID = ItemStackUtils.getPlayerHeadTexture(itemStack);
-                client.keyboard.setClipboard(textureID);
+            if (stack.isEmpty()) continue;
 
-                client.player.sendMessage(Text.literal("Copied Texture-ID: ")
-                        .setStyle(Style.EMPTY
-                                .withColor(TextColor.fromFormatting(Formatting.AQUA))
-                        ), false);
-                client.player.sendMessage(Text.literal(textureID)
-                        .setStyle(Style.EMPTY
-                                .withClickEvent(new ClickEvent.CopyToClipboard(textureID))
-                        ), false);
+            ChatUtils.message(name + ": " + stack.getItem().getName(stack).getString());
+
+            if (stack.is(Items.PLAYER_HEAD)) {
+                String textureId = ItemStackUtils.getPlayerHeadTexture(stack);
+                client.keyboardHandler.setClipboard(textureId);
+
+                player.displayClientMessage(
+                        Component.literal("Copied Texture-ID: ")
+                                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x55FFFF))),
+                        false
+                );
+
+                player.displayClientMessage(
+                        Component.literal(textureId)
+                                .withStyle(
+                                        Style.EMPTY.withClickEvent(
+                                                new ClickEvent.CopyToClipboard(textureId)
+                                        )
+                                ),
+                        false
+                );
             }
         }
 
