@@ -3,7 +3,8 @@
 	"package": "gg.itzkatze.thehypixelrecreationmod.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"HandledScreenAccessor"
+		"HandledScreenAccessor",
+		"ChatHudMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

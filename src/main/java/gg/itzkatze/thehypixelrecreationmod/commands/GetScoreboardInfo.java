@@ -16,7 +16,7 @@ import java.util.List;
 public class GetScoreboardInfo {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getScoreboardInfo")
+            dispatcher.register(ClientCommandManager.literal("getscoreboardinfo")
                     .executes(ctx -> {
                         MinecraftClient client = MinecraftClient.getInstance();
                         if (client.world == null || client.player == null) return 1;

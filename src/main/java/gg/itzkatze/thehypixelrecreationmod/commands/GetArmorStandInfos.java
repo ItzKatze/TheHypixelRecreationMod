@@ -25,7 +25,7 @@ import java.util.Map;
 public class GetArmorStandInfos {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getArmorStandInfos")
+            dispatcher.register(ClientCommandManager.literal("getarmorstandinfos")
                     .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
                             .executes(context -> {
                                 double radius = DoubleArgumentType.getDouble(context, "radius");

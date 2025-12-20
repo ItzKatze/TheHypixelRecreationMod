@@ -20,7 +20,7 @@ import java.util.List;
 public class GetArmorStandArmorColorsCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getArmorStandColors")
+            dispatcher.register(ClientCommandManager.literal("getarmorstandcolors")
                     .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
                             .executes(context -> {
                                 double radius = DoubleArgumentType.getDouble(context, "radius");

@@ -4,6 +4,7 @@ import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.GUIUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
@@ -16,6 +17,7 @@ import java.util.List;
 public class CopyLoreFromItem {
     public static void copyLore(MinecraftClient client) {
         if (client.player == null) return;
+        if (!(client.currentScreen instanceof HandledScreen<?> screen)) return;
 
         ItemStack stack = GUIUtils.getHoveredItem(client);
         List<String> lore = ItemStackUtils.getLoreAsStrings(stack);

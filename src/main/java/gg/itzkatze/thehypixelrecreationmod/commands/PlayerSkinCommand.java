@@ -27,7 +27,7 @@ import java.util.List;
 public class PlayerSkinCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getSkins")
+            dispatcher.register(ClientCommandManager.literal("getskins")
                     .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
                             .executes(context -> {
                                 double radius = DoubleArgumentType.getDouble(context, "radius");
@@ -70,10 +70,53 @@ public class PlayerSkinCommand {
                                                         .withColor(TextColor.fromFormatting(Formatting.AQUA))
                                                 );
 
+                                        String hologram = getOverheadName(player).replace("\"", "\\\"");
+                                        String posX = String.format("%.3f", player.getX());
+                                        String posY = String.format("%.3f", player.getY());
+                                        String posZ = String.format("%.3f", player.getZ());
+                                        int yaw = Math.round(player.getYaw());
+                                        int pitch = Math.round(player.getPitch());
+
+                                        String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
+                                        String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
+
+                                        String npcParams = "super(new NPCParameters() {\n" +
+                                                "            @Override\n" +
+                                                "            public String[] holograms(HypixelPlayer player) {\n" +
+                                                "                return new String[]{\"" + hologram + "\"};\n" +
+                                                "            }\n\n" +
+                                                "            @Override\n" +
+                                                "            public String signature(HypixelPlayer player) {\n" +
+                                                "                return \"" + safeSignature + "\";\n" +
+                                                "            }\n\n" +
+                                                "            @Override\n" +
+                                                "            public String texture(HypixelPlayer player) {\n" +
+                                                "                return \"" + safeTexture + "\";\n" +
+                                                "            }\n\n" +
+                                                "            @Override\n" +
+                                                "            public Pos position(HypixelPlayer player) {\n" +
+                                                "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
+                                                "            }\n\n" +
+                                                "            @Override\n" +
+                                                "            public boolean looking() {\n" +
+                                                "                return true;\n" +
+                                                "            }\n" +
+                                                "        });";
+
+                                        Text npcParamsMessage = Text.literal("Copy premade NPCParameters (click)")
+                                                .setStyle(Style.EMPTY
+                                                        .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
+                                                        .withColor(TextColor.fromFormatting(Formatting.YELLOW))
+                                                );
+
                                         ChatUtils.sendLine();
                                         sender.sendMessage(Text.literal("Skin data for ").append(name), false);
                                         sender.sendMessage(textureMessage, false);
+                                        sender.sendMessage(Text.literal(" - "), false);
                                         sender.sendMessage(signatureMessage, false);
+                                        sender.sendMessage(Text.literal(" - "), false);
+                                        sender.sendMessage(npcParamsMessage, false);
+                                        sender.sendMessage(Text.literal(" - "), false);
                                         ChatUtils.sendLine();
                                     } else {
                                         sender.sendMessage(Text.literal("No skin data for " + name), false);
@@ -99,7 +142,10 @@ public class PlayerSkinCommand {
             if (entity.getBoundingBox().intersects(boxAbove)) {
                 if ((entity instanceof DisplayEntity.TextDisplayEntity || entity instanceof ArmorStandEntity)
                         && entity.hasCustomName()) {
-                    String raw = entity.getCustomName().getString().replaceAll("§.", "").trim();
+                    // Safely retrieve custom name to avoid possible NPE
+                    Text customName = entity.getCustomName();
+                    if (customName == null) continue;
+                    String raw = customName.getString().replaceAll("§.", "").trim();
                     if (!raw.isEmpty()) {
                         return raw;
                     }
