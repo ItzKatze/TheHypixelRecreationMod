@@ -5,21 +5,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.scores.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
 import java.util.*;
 
 public class RegionTracker {
-    public static final Map<String, List<RegionBox>> regions = new HashMap<>();
+    // Store individual 1x1 blocks per region
+    public static final Map<String, Set<BlockPos>> regionBlocks = new HashMap<>();
     private static final Map<String, Integer> regionColors = new HashMap<>();
     private static String currentRegion = "";
-    private static RegionBox activeBox = null;
-    private static BlockPos lastPlayerPos = null;
-    private static final Map<BlockPos, String> positionRegionCache = new HashMap<>();
-    private static final int CACHE_SIZE = 1000;
-    private static int regionStableTicks = 0;
+    private static BlockPos lastCheckedPos = null;
     private static final int REGION_STABILITY_THRESHOLD = 2;
+    private static int regionStableTicks = 0;
+    private static boolean debugMode = true;
 
-    // Color palette for different regions
+    // Extended color palette with more distinct colors
     private static final int[] COLOR_PALETTE = {
             0xFF0000, // Red
             0x00FF00, // Green
@@ -31,7 +29,42 @@ public class RegionTracker {
             0x800080, // Purple
             0x008000, // Dark Green
             0x800000, // Maroon
+            0x008080, // Teal
+            0xFF6347, // Tomato
+            0x9370DB, // Medium Purple
+            0x32CD32, // Lime Green
+            0xFF4500, // Orange Red
+            0x2E8B57, // Sea Green
+            0x8A2BE2, // Blue Violet
+            0xDC143C, // Crimson
+            0x00CED1, // Dark Turquoise
+            0xFF1493, // Deep Pink
+            0x1E90FF, // Dodger Blue
+            0xB22222, // Fire Brick
+            0x228B22, // Forest Green
+            0xDAA520, // Golden Rod
+            0xADFF2F, // Green Yellow
+            0xFF69B4, // Hot Pink
+            0xCD5C5C, // Indian Red
+            0x4B0082, // Indigo
+            0xF0E68C, // Khaki
+            0x7CFC00, // Lawn Green
     };
+
+    // Track which regions are adjacent to each other
+    private static final Map<String, Set<String>> regionAdjacency = new HashMap<>();
+
+    private static void debug(String message) {
+        if (!debugMode) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            client.player.displayClientMessage(
+                    Component.literal("§7[DEBUG] " + message),
+                    false
+            );
+        }
+        System.out.println("[RegionTracker DEBUG] " + message);
+    }
 
     public static void update() {
         Minecraft client = Minecraft.getInstance();
@@ -39,9 +72,11 @@ public class RegionTracker {
 
         BlockPos currentPos = client.player.blockPosition();
 
-        // Only process if player moved
-        if (lastPlayerPos != null && lastPlayerPos.equals(currentPos)) return;
-        lastPlayerPos = currentPos;
+        // Only process if player moved to a new block
+        if (lastCheckedPos != null && lastCheckedPos.equals(currentPos)) {
+            return;
+        }
+        lastCheckedPos = currentPos;
 
         // Get current region from scoreboard
         String newRegion = getCurrentRegionFromScoreboard();
@@ -52,286 +87,228 @@ public class RegionTracker {
             return;
         }
 
-        // Region stability tracking
+        // Check region stability
         if (newRegion.equals(currentRegion)) {
             regionStableTicks++;
         } else {
+            debug("§eRegion changed: §c" + currentRegion + " §7-> §a" + newRegion);
             regionStableTicks = 1;
-
-            // Region changed, finalize current active box
-            if (activeBox != null) {
-                finalizeActiveBox();
-            }
-
             currentRegion = newRegion;
         }
 
-        if (regionStableTicks < REGION_STABILITY_THRESHOLD) return;
-
-        // Cache this position
-        cacheRegion(currentPos, currentRegion);
-
-        // If we have an active box for current region, try to expand it
-        if (activeBox != null && activeBox.regionType.equals(currentRegion)) {
-            expandBoxIfNeeded(currentPos);
+        // Only process if region is stable
+        if (regionStableTicks < REGION_STABILITY_THRESHOLD) {
             return;
         }
 
-        // No active box or wrong region - check if we're in an existing box
-        RegionBox existingBox = findBoxForRegion(currentPos, currentRegion);
+        // Check if this position is already registered with the correct region
+        String existingRegion = getRegionAtPosition(currentPos);
 
-        if (existingBox != null) {
-            // We're in an existing finalized box - make it active again
-            List<RegionBox> regionBoxes = regions.get(currentRegion);
-            if (regionBoxes != null) {
-                regionBoxes.remove(existingBox);
+        if (existingRegion != null) {
+            if (existingRegion.equals(currentRegion)) {
+                debug("§aBlock " + posToString(currentPos) + " already belongs to " + currentRegion);
+                return; // Already correct, nothing to do
+            } else {
+                // Wrong region - remove from old region and add to correct one
+                debug("§cCorrecting block " + posToString(currentPos) +
+                        " from " + existingRegion + " to " + currentRegion);
+                removeBlockFromRegion(currentPos, existingRegion);
+                // Update adjacency after removal
+                updateAdjacencyForPosition(currentPos, existingRegion, currentRegion);
             }
-            activeBox = existingBox;
-            expandBoxIfNeeded(currentPos);
-            return;
+        } else {
+            // Update adjacency for new block
+            updateAdjacencyForPosition(currentPos, null, currentRegion);
         }
 
-        // Check if position is near any existing box of current region (within 5 blocks)
-        RegionBox nearbyBox = findNearbyBoxForRegion(currentPos, currentRegion, 5);
-        if (nearbyBox != null) {
-            // Make it active and expand to include current position
-            List<RegionBox> regionBoxes = regions.get(currentRegion);
-            if (regionBoxes != null) {
-                regionBoxes.remove(nearbyBox);
-            }
-            activeBox = nearbyBox;
-            expandBoxIfNeeded(currentPos);
-            return;
-        }
+        // Add block to current region
+        addBlockToRegion(currentPos, currentRegion);
 
-        // Check if we're in a different region's territory
-        RegionBox otherRegionBox = findBoxAtPosition(currentPos);
-        if (otherRegionBox != null && !otherRegionBox.regionType.equals(currentRegion)) {
-            // In another region's box - don't create anything here
-            return;
+        // Initialize region color if needed, ensuring no adjacent regions share colors
+        if (!regionColors.containsKey(currentRegion)) {
+            assignDistinctColorToRegion(currentRegion);
         }
-
-        // Create new box only if we're not near any existing boxes of this region
-        createNewBox(currentPos);
     }
 
-    private static void expandBoxIfNeeded(BlockPos currentPos) {
-        if (activeBox == null) return;
+    private static void updateAdjacencyForPosition(BlockPos pos, String oldRegion, String newRegion) {
+        // Check all 6 adjacent positions (up, down, north, south, east, west)
+        BlockPos[] adjacentPositions = {
+                pos.above(), pos.below(),
+                pos.north(), pos.south(),
+                pos.east(), pos.west()
+        };
 
-        // Don't expand if position is already contained
-        if (activeBox.contains(currentPos)) {
-            activeBox.setLastCorner(currentPos);
-            return;
-        }
-
-        // Calculate what the expanded box would look like
-        BlockPos candidateMin = new BlockPos(
-                Math.min(activeBox.getMin().getX(), currentPos.getX()),
-                Math.min(activeBox.getMin().getY(), currentPos.getY()),
-                Math.min(activeBox.getMin().getZ(), currentPos.getZ())
-        );
-        BlockPos candidateMax = new BlockPos(
-                Math.max(activeBox.getMax().getX(), currentPos.getX()),
-                Math.max(activeBox.getMax().getY(), currentPos.getY()),
-                Math.max(activeBox.getMax().getZ(), currentPos.getZ())
-        );
-
-        // Check if any other region's boxes would be intersected by this expansion
-        if (!canExpandToPosition(candidateMin, candidateMax, activeBox.regionType)) {
-            // Can't expand - but don't create a new box, just stop expanding
-            return;
-        }
-
-        // Try to merge with adjacent same-region boxes
-        List<RegionBox> sameRegionBoxes = regions.getOrDefault(activeBox.regionType, new ArrayList<>());
-        List<RegionBox> toMerge = new ArrayList<>();
-
-        RegionBox testBox = new RegionBox(activeBox.regionType, candidateMin, candidateMax);
-
-        for (RegionBox other : sameRegionBoxes) {
-            if (RegionBox.boxesTouchOrOverlap(testBox, other)) {
-                toMerge.add(other);
-            }
-        }
-
-        // Merge boxes if found
-        if (!toMerge.isEmpty()) {
-            for (RegionBox mergeBox : toMerge) {
-                candidateMin = new BlockPos(
-                        Math.min(candidateMin.getX(), mergeBox.getMin().getX()),
-                        Math.min(candidateMin.getY(), mergeBox.getMin().getY()),
-                        Math.min(candidateMin.getZ(), mergeBox.getMin().getZ())
-                );
-                candidateMax = new BlockPos(
-                        Math.max(candidateMax.getX(), mergeBox.getMax().getX()),
-                        Math.max(candidateMax.getY(), mergeBox.getMax().getY()),
-                        Math.max(candidateMax.getZ(), mergeBox.getMax().getZ())
-                );
-            }
-
-            // Double-check safety after merge
-            if (!canExpandToPosition(candidateMin, candidateMax, activeBox.regionType)) {
-                return;
-            }
-
-            // Remove merged boxes
-            sameRegionBoxes.removeAll(toMerge);
-            invalidateCacheForRegion(activeBox.regionType);
-        }
-
-        // Apply expansion
-        activeBox.corner1 = candidateMin;
-        activeBox.corner2 = candidateMax;
-        activeBox.setLastCorner(currentPos);
-    }
-
-    private static boolean canExpandToPosition(BlockPos min, BlockPos max, String regionType) {
-        RegionBox testBox = new RegionBox(regionType, min, max);
-
-        // Check against all finalized boxes of other regions
-        for (Map.Entry<String, List<RegionBox>> entry : regions.entrySet()) {
-            if (entry.getKey().equals(regionType)) continue;
-
-            for (RegionBox other : entry.getValue()) {
-                if (boxesIntersect(testBox, other)) {
-                    return false;
+        // Remove old adjacency relationships
+        if (oldRegion != null) {
+            for (BlockPos adjacentPos : adjacentPositions) {
+                String adjacentRegion = getRegionAtPosition(adjacentPos);
+                if (adjacentRegion != null && !adjacentRegion.equals(oldRegion)) {
+                    // Remove bidirectional adjacency
+                    regionAdjacency.computeIfAbsent(oldRegion, k -> new HashSet<>()).remove(adjacentRegion);
+                    regionAdjacency.computeIfAbsent(adjacentRegion, k -> new HashSet<>()).remove(oldRegion);
                 }
             }
         }
 
-        return true;
-    }
+        // Add new adjacency relationships
+        if (newRegion != null) {
+            for (BlockPos adjacentPos : adjacentPositions) {
+                String adjacentRegion = getRegionAtPosition(adjacentPos);
+                if (adjacentRegion != null && !adjacentRegion.equals(newRegion)) {
+                    // Add bidirectional adjacency
+                    regionAdjacency.computeIfAbsent(newRegion, k -> new HashSet<>()).add(adjacentRegion);
+                    regionAdjacency.computeIfAbsent(adjacentRegion, k -> new HashSet<>()).add(newRegion);
 
-    private static void cacheRegion(BlockPos pos, String region) {
-        positionRegionCache.put(pos, region);
+                    debug("§dAdjacency: " + newRegion + " ↔ " + adjacentRegion);
 
-        if (positionRegionCache.size() > CACHE_SIZE) {
-            Iterator<BlockPos> iterator = positionRegionCache.keySet().iterator();
-            for (int i = 0; i < CACHE_SIZE / 10 && iterator.hasNext(); i++) {
-                iterator.next();
-                iterator.remove();
+                    // Check if colors need to be reassigned
+                    if (regionColors.containsKey(newRegion) && regionColors.containsKey(adjacentRegion)) {
+                        if (regionColors.get(newRegion).equals(regionColors.get(adjacentRegion))) {
+                            debug("§cColor conflict detected between " + newRegion + " and " + adjacentRegion);
+                            // Reassign color to the new region
+                            assignDistinctColorToRegion(newRegion);
+                        }
+                    }
+                }
             }
         }
     }
 
-    private static void invalidateCacheForRegion(String regionType) {
-        positionRegionCache.entrySet().removeIf(entry ->
-                entry.getValue().equals(regionType)
-        );
-    }
+    private static void assignDistinctColorToRegion(String region) {
+        Set<String> adjacentRegions = regionAdjacency.getOrDefault(region, new HashSet<>());
+        Set<Integer> forbiddenColors = new HashSet<>();
 
-    private static RegionBox findBoxAtPosition(BlockPos pos) {
-        // First check active box
-        if (activeBox != null && activeBox.contains(pos)) {
-            return activeBox;
+        // Collect colors of adjacent regions
+        for (String adjacentRegion : adjacentRegions) {
+            if (regionColors.containsKey(adjacentRegion)) {
+                forbiddenColors.add(regionColors.get(adjacentRegion));
+            }
         }
 
-        // Check finalized boxes
-        for (List<RegionBox> regionBoxes : regions.values()) {
-            for (RegionBox box : regionBoxes) {
-                if (box.contains(pos)) {
-                    return box;
+        // Also check for regions that are 2 blocks away to avoid similar colors
+        Set<String> nearbyRegions = new HashSet<>(adjacentRegions);
+        for (String adjacentRegion : adjacentRegions) {
+            Set<String> secondLevelAdjacent = regionAdjacency.getOrDefault(adjacentRegion, new HashSet<>());
+            for (String secondRegion : secondLevelAdjacent) {
+                if (!secondRegion.equals(region)) {
+                    nearbyRegions.add(secondRegion);
+                    if (regionColors.containsKey(secondRegion)) {
+                        forbiddenColors.add(regionColors.get(secondRegion));
+                    }
                 }
+            }
+        }
+
+        // Find a suitable color
+        int assignedColor = 0xFFFFFF; // Default white
+
+        // Try to find a color that's not forbidden
+        for (int color : COLOR_PALETTE) {
+            if (!forbiddenColors.contains(color)) {
+                assignedColor = color;
+                break;
+            }
+        }
+
+        // If all colors in palette are forbidden, find one that's least similar
+        if (forbiddenColors.contains(assignedColor)) {
+            assignedColor = findMostDifferentColor(forbiddenColors);
+        }
+
+        regionColors.put(region, assignedColor);
+        debug("§aAssigned color #" + Integer.toHexString(assignedColor).toUpperCase() +
+                " to region " + region + " (avoiding " + forbiddenColors.size() + " forbidden colors)");
+
+        // Log adjacency info
+        if (!adjacentRegions.isEmpty()) {
+            StringBuilder adjList = new StringBuilder();
+            for (String adj : adjacentRegions) {
+                adjList.append(adj).append(", ");
+            }
+            debug("§7Adjacent to: " + adjList.toString());
+        }
+    }
+
+    private static int findMostDifferentColor(Set<Integer> forbiddenColors) {
+        // If we have to reuse a color, try to pick one that's far from most forbidden colors
+        Map<Integer, Double> colorScores = new HashMap<>();
+
+        for (int candidateColor : COLOR_PALETTE) {
+            double totalDistance = 0;
+            int r1 = (candidateColor >> 16) & 0xFF;
+            int g1 = (candidateColor >> 8) & 0xFF;
+            int b1 = candidateColor & 0xFF;
+
+            for (int forbiddenColor : forbiddenColors) {
+                int r2 = (forbiddenColor >> 16) & 0xFF;
+                int g2 = (forbiddenColor >> 8) & 0xFF;
+                int b2 = forbiddenColor & 0xFF;
+
+                // Calculate color distance (Euclidean in RGB space)
+                double distance = Math.sqrt(
+                        Math.pow(r1 - r2, 2) +
+                                Math.pow(g1 - g2, 2) +
+                                Math.pow(b1 - b2, 2)
+                );
+                totalDistance += distance;
+            }
+
+            colorScores.put(candidateColor, totalDistance / forbiddenColors.size());
+        }
+
+        // Return color with highest average distance
+        return colorScores.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(0xFFFFFF);
+    }
+
+    private static void addBlockToRegion(BlockPos pos, String region) {
+        regionBlocks.computeIfAbsent(region, k -> new HashSet<>()).add(pos.immutable());
+        debug("§aAdded block " + posToString(pos) + " to region " + region);
+
+        // Show feedback every 10th block added
+        Set<BlockPos> blocks = regionBlocks.get(region);
+        if (blocks != null && blocks.size() % 10 == 0) {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null) {
+                client.player.displayClientMessage(
+                        Component.literal("§7Mapped " + blocks.size() + " blocks for §e" + region),
+                        true
+                );
+            }
+        }
+    }
+
+    private static void removeBlockFromRegion(BlockPos pos, String region) {
+        Set<BlockPos> blocks = regionBlocks.get(region);
+        if (blocks != null) {
+            blocks.remove(pos);
+            debug("§cRemoved block " + posToString(pos) + " from region " + region);
+
+            // Clean up empty regions
+            if (blocks.isEmpty()) {
+                regionBlocks.remove(region);
+                regionColors.remove(region);
+                regionAdjacency.remove(region);
+
+                // Also remove this region from other regions' adjacency lists
+                for (Set<String> adjSet : regionAdjacency.values()) {
+                    adjSet.remove(region);
+                }
+
+                debug("§cRegion " + region + " has no blocks remaining - removed");
+            }
+        }
+    }
+
+    private static String getRegionAtPosition(BlockPos pos) {
+        for (Map.Entry<String, Set<BlockPos>> entry : regionBlocks.entrySet()) {
+            if (entry.getValue().contains(pos)) {
+                return entry.getKey();
             }
         }
         return null;
-    }
-
-    private static RegionBox findBoxForRegion(BlockPos pos, String regionType) {
-        List<RegionBox> regionBoxes = regions.get(regionType);
-        if (regionBoxes != null) {
-            for (RegionBox box : regionBoxes) {
-                if (box.contains(pos)) {
-                    return box;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static RegionBox findNearbyBoxForRegion(BlockPos pos, String regionType, int maxDistance) {
-        List<RegionBox> regionBoxes = regions.get(regionType);
-        if (regionBoxes == null) return null;
-
-        RegionBox closest = null;
-        double closestDist = Double.MAX_VALUE;
-
-        for (RegionBox box : regionBoxes) {
-            double dist = getDistanceToBox(pos, box);
-            if (dist <= maxDistance && dist < closestDist) {
-                closest = box;
-                closestDist = dist;
-            }
-        }
-
-        return closest;
-    }
-
-    private static double getDistanceToBox(BlockPos pos, RegionBox box) {
-        BlockPos min = box.getMin();
-        BlockPos max = box.getMax();
-
-        // If inside box, distance is 0
-        if (box.contains(pos)) return 0;
-
-        // Calculate closest point on box to pos
-        int closestX = Math.max(min.getX(), Math.min(pos.getX(), max.getX()));
-        int closestY = Math.max(min.getY(), Math.min(pos.getY(), max.getY()));
-        int closestZ = Math.max(min.getZ(), Math.min(pos.getZ(), max.getZ()));
-
-        // Calculate distance
-        int dx = pos.getX() - closestX;
-        int dy = pos.getY() - closestY;
-        int dz = pos.getZ() - closestZ;
-
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    private static void createNewBox(BlockPos pos) {
-        // Create 1x1 box at player position
-        activeBox = new RegionBox(currentRegion, pos, pos);
-
-        // Initialize region color if needed
-        regionColors.putIfAbsent(currentRegion,
-                COLOR_PALETTE[regionColors.size() % COLOR_PALETTE.length]);
-        activeBox.setColor(regionColors.get(currentRegion));
-
-        Minecraft client = Minecraft.getInstance();
-        if (client.player != null) {
-            client.player.displayClientMessage(
-                    Component.literal("§aStarted new region box: §e" + currentRegion),
-                    false
-            );
-        }
-    }
-
-    private static boolean boxesIntersect(RegionBox a, RegionBox b) {
-        BlockPos aMin = a.getMin();
-        BlockPos aMax = a.getMax();
-        BlockPos bMin = b.getMin();
-        BlockPos bMax = b.getMax();
-
-        return aMin.getX() <= bMax.getX() && aMax.getX() >= bMin.getX()
-                && aMin.getY() <= bMax.getY() && aMax.getY() >= bMin.getY()
-                && aMin.getZ() <= bMax.getZ() && aMax.getZ() >= bMin.getZ();
-    }
-
-    private static void finalizeActiveBox() {
-        if (activeBox == null) return;
-
-        regions
-                .computeIfAbsent(activeBox.regionType, k -> new ArrayList<>())
-                .add(activeBox);
-
-        Minecraft client = Minecraft.getInstance();
-        if (client.player != null) {
-            client.player.displayClientMessage(
-                    Component.literal("§7Finalized region box: §e" + activeBox.regionType),
-                    true
-            );
-        }
-
-        activeBox = null;
     }
 
     private static String getCurrentRegionFromScoreboard() {
@@ -389,23 +366,24 @@ public class RegionTracker {
         return name.length() > 1 && name.length() < 50;
     }
 
+    private static String posToString(BlockPos pos) {
+        if (pos == null) return "§c(null)";
+        return "§7(" + pos.getX() + "§7, §b" + pos.getY() + "§7, §a" + pos.getZ() + "§7)";
+    }
+
     public static List<RegionBox> getActiveBoxes() {
-        List<RegionBox> allBoxes = new ArrayList<>();
-        for (List<RegionBox> boxList : regions.values()) {
-            allBoxes.addAll(boxList);
+        List<RegionBox> boxes = new ArrayList<>();
+
+        for (String region : regionBlocks.keySet()) {
+            boxes.addAll(getMergedBoxesForRegion(region));
         }
-        if (activeBox != null) {
-            allBoxes.add(activeBox);
-        }
-        return allBoxes;
+
+        return boxes;
     }
 
     public static List<RegionBox> getIncompleteBoxes() {
-        List<RegionBox> incomplete = new ArrayList<>();
-        if (activeBox != null) {
-            incomplete.add(activeBox);
-        }
-        return incomplete;
+        // In this system, all boxes are "complete" (1x1 blocks)
+        return getActiveBoxes();
     }
 
     public static int getRegionColor(String regionName) {
@@ -413,12 +391,184 @@ public class RegionTracker {
     }
 
     public static void initialize() {
-        regions.clear();
+        regionBlocks.clear();
         regionColors.clear();
-        positionRegionCache.clear();
+        regionAdjacency.clear();
         currentRegion = "";
-        activeBox = null;
-        lastPlayerPos = null;
+        lastCheckedPos = null;
         regionStableTicks = 0;
+        debug("§a1x1 Block RegionTracker initialized");
+    }
+
+    public static void setDebugMode(boolean enabled) {
+        debugMode = enabled;
+        debug("Debug mode " + (enabled ? "enabled" : "disabled"));
+    }
+
+    public static int getTotalBlocks() {
+        return regionBlocks.values().stream().mapToInt(Set::size).sum();
+    }
+
+    public static int getRegionBlockCount(String region) {
+        Set<BlockPos> blocks = regionBlocks.get(region);
+        return blocks != null ? blocks.size() : 0;
+    }
+
+    public static Map<String, Integer> getRegionStatistics() {
+        Map<String, Integer> stats = new HashMap<>();
+        for (Map.Entry<String, Set<BlockPos>> entry : regionBlocks.entrySet()) {
+            stats.put(entry.getKey(), entry.getValue().size());
+        }
+        return stats;
+    }
+
+    public static Map<String, Set<String>> getRegionAdjacency() {
+        return new HashMap<>(regionAdjacency);
+    }
+
+    public static void recolorAllRegions() {
+        debug("§6Recoloring all regions to ensure distinct adjacent colors...");
+
+        // Store old colors for comparison
+        Map<String, Integer> oldColors = new HashMap<>(regionColors);
+        regionColors.clear();
+
+        // Assign new colors to all regions
+        for (String region : regionBlocks.keySet()) {
+            assignDistinctColorToRegion(region);
+        }
+
+        // Count changed colors
+        int changed = 0;
+        for (String region : regionColors.keySet()) {
+            if (oldColors.containsKey(region) &&
+                    !oldColors.get(region).equals(regionColors.get(region))) {
+                changed++;
+            }
+        }
+
+        debug("§aRecoloring complete: " + changed + " regions changed color");
+    }
+
+    private static BlockPos pickOutermost(Set<BlockPos> blocks) {
+        return blocks.stream()
+                .min(Comparator
+                        .comparingInt((BlockPos p) -> p.getY())
+                        .thenComparingInt((BlockPos p) -> p.getX())
+                        .thenComparingInt((BlockPos p) -> p.getZ()))
+                .orElseThrow();
+    }
+
+
+
+    private static RegionBox extractMaxBox(
+            String region,
+            Set<BlockPos> remaining,
+            int color
+    ) {
+        BlockPos start = pickOutermost(remaining);
+
+        int minX = start.getX();
+        int minY = start.getY();
+        int minZ = start.getZ();
+
+        int maxX = minX;
+        int maxY = minY;
+        int maxZ = minZ;
+
+        boolean expanded;
+
+        do {
+            expanded = false;
+
+            // Try +X
+            if (canExpandX(remaining, minX, minY, minZ, maxX + 1, maxY, maxZ)) {
+                maxX++;
+                expanded = true;
+            }
+
+            // Try +Z
+            if (canExpandZ(remaining, minX, minY, minZ, maxX, maxY, maxZ + 1)) {
+                maxZ++;
+                expanded = true;
+            }
+
+            // Try +Y
+            if (canExpandY(remaining, minX, minY, minZ, maxX, maxY + 1, maxZ)) {
+                maxY++;
+                expanded = true;
+            }
+
+        } while (expanded);
+
+        // Remove covered blocks
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    remaining.remove(new BlockPos(x, y, z));
+                }
+            }
+        }
+
+        return new RegionBox(
+                region,
+                new BlockPos(minX, minY, minZ),
+                new BlockPos(maxX, maxY, maxZ),
+                color
+        );
+    }
+
+    private static boolean canExpandX(Set<BlockPos> blocks,
+                                      int minX, int minY, int minZ,
+                                      int newX, int maxY, int maxZ) {
+        for (int y = minY; y <= maxY; y++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!blocks.contains(new BlockPos(newX, y, z))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean canExpandZ(Set<BlockPos> blocks,
+                                      int minX, int minY, int minZ,
+                                      int maxX, int maxY, int newZ) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                if (!blocks.contains(new BlockPos(x, y, newZ))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean canExpandY(Set<BlockPos> blocks,
+                                      int minX, int minY, int minZ,
+                                      int maxX, int newY, int maxZ) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!blocks.contains(new BlockPos(x, newY, z))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static List<RegionBox> getMergedBoxesForRegion(String region) {
+        Set<BlockPos> blocks = regionBlocks.get(region);
+        if (blocks == null || blocks.isEmpty()) return List.of();
+
+        Set<BlockPos> remaining = new HashSet<>(blocks);
+        List<RegionBox> result = new ArrayList<>();
+        int color = getRegionColor(region);
+
+        while (!remaining.isEmpty()) {
+            result.add(extractMaxBox(region, remaining, color));
+        }
+
+        return result;
     }
 }
