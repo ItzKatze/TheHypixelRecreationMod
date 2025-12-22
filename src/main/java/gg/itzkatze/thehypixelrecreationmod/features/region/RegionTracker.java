@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import java.util.*;
 
 public class RegionTracker {
-    // Store individual 1x1 blocks per region
     public static final Map<String, Set<BlockPos>> regionBlocks = new HashMap<>();
     private static final Map<String, Integer> regionColors = new HashMap<>();
     private static String currentRegion = "";
@@ -16,6 +15,7 @@ public class RegionTracker {
     private static final int REGION_STABILITY_THRESHOLD = 2;
     private static int regionStableTicks = 0;
     private static boolean debugMode = true;
+    private static boolean enabled = true;
 
     // Extended color palette with more distinct colors
     private static final int[] COLOR_PALETTE = {
@@ -66,7 +66,30 @@ public class RegionTracker {
         System.out.println("[RegionTracker DEBUG] " + message);
     }
 
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
+    public static void setEnabled(boolean state) {
+        enabled = state;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            String status = state ? "§aENABLED" : "§cDISABLED";
+            client.player.displayClientMessage(
+                    Component.literal("§7Region tracking " + status),
+                    false
+            );
+        }
+        debug("Region tracking " + (state ? "enabled" : "disabled"));
+    }
+
+    public static void toggle() {
+        setEnabled(!enabled);
+    }
+
     public static void update() {
+        if (!enabled) return;
+
         Minecraft client = Minecraft.getInstance();
         if (client.level == null || client.player == null) return;
 
@@ -372,12 +395,12 @@ public class RegionTracker {
     }
 
     public static List<RegionBox> getActiveBoxes() {
-        List<RegionBox> boxes = new ArrayList<>();
+        if (!enabled) return new ArrayList<>();
 
+        List<RegionBox> boxes = new ArrayList<>();
         for (String region : regionBlocks.keySet()) {
             boxes.addAll(getMergedBoxesForRegion(region));
         }
-
         return boxes;
     }
 

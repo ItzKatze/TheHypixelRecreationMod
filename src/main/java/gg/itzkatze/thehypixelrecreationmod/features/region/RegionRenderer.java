@@ -15,7 +15,23 @@ import java.util.List;
 
 public class RegionRenderer {
 
+    private static boolean renderEnabled = true;
+
+    public static boolean isRenderEnabled() {
+        return renderEnabled;
+    }
+
+    public static void setRenderEnabled(boolean state) {
+        renderEnabled = state;
+    }
+
+    public static void toggleRender() {
+        renderEnabled = !renderEnabled;
+    }
+
     public static void render(PoseStack matrices, Camera camera, float tickDelta) {
+        if (!renderEnabled) return;
+
         Minecraft client = Minecraft.getInstance();
         if (client.level == null || client.player == null) return;
 
