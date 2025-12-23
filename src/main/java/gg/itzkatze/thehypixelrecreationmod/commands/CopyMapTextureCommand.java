@@ -26,7 +26,10 @@ public class CopyMapTextureCommand {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
                     ClientCommandManager.literal("copymaptexture")
-                            .executes(context -> execute(context.getSource().getClient()))
+                            .executes(ctx -> executeSingle(ctx.getSource().getClient()))
+                            .then(ClientCommandManager.literal("all")
+                                    .executes(ctx -> executeAll(ctx.getSource().getClient()))
+                            )
             );
         });
     }
@@ -53,7 +56,83 @@ public class CopyMapTextureCommand {
         return null;
     }
 
-    private static int execute(Minecraft client) {
+    private static int executeAll(Minecraft client) {
+        Player player = client.player;
+
+        if (player == null || client.level == null) {
+            ChatUtils.error("Player or level is null.");
+            return 1;
+        }
+
+        ItemFrame anchor = getTargetedItemFrame(player);
+        if (anchor == null) {
+            ChatUtils.warn("You must be looking at an item frame.");
+            return 1;
+        }
+
+        // Get facing vectors from player POV
+        Vec3 forward = player.getLookAngle().normalize();
+        Vec3 up = new Vec3(0, 1, 0);
+        Vec3 right = forward.cross(up).normalize();
+
+        // Collect nearby item frames on same plane
+        AABB box = anchor.getBoundingBox().inflate(6);
+        var frames = client.level.getEntitiesOfClass(ItemFrame.class, box, f ->
+                f.getDirection() == anchor.getDirection()
+        );
+
+        record Entry(ItemFrame frame, double x, double y) {}
+
+        var entries = frames.stream().map(frame -> {
+            Vec3 delta = frame.position().subtract(anchor.position());
+            double sx = delta.dot(right); // left → right
+            double sy = delta.dot(up);    // bottom → top
+            return new Entry(frame, sx, sy);
+        }).toList();
+
+        // Sort: top → bottom, left → right
+        var sorted = entries.stream()
+                .sorted((a, b) -> {
+                    int y = Double.compare(b.y, a.y);
+                    if (y != 0) return y;
+                    return Double.compare(a.x, b.x);
+                })
+                .toList();
+
+        StringBuilder out = new StringBuilder();
+
+        for (Entry e : sorted) {
+            ItemStack stack = e.frame.getItem();
+            if (!(stack.getItem() instanceof MapItem)) continue;
+
+            MapId id = stack.get(net.minecraft.core.component.DataComponents.MAP_ID);
+            if (id == null) continue;
+
+            MapItemSavedData data = client.level.getMapData(id);
+            if (data == null || data.colors.length != 128 * 128) continue;
+
+            try {
+                String compressed = compressAndEncode(data.colors);
+                out.append("\"").append(compressed).append("\",\n");
+            } catch (IOException ignored) {}
+        }
+
+        if (out.length() == 0) {
+            ChatUtils.error("No map data found.");
+            return 1;
+        }
+
+        // Remove trailing comma
+        out.setLength(out.length() - 2);
+
+        client.keyboardHandler.setClipboard(out.toString());
+        ChatUtils.message("Copied " + sorted.size() + " map tiles to clipboard.");
+
+        return 1;
+    }
+
+
+    private static int executeSingle(Minecraft client) {
         Player player = client.player;
 
         if (player == null || client.level == null) {
@@ -86,7 +165,7 @@ public class CopyMapTextureCommand {
         }
 
         byte[] colors = mapData.colors;
-        if (colors == null || colors.length != 128 * 128) {
+        if (colors.length != 128 * 128) {
             ChatUtils.error("Invalid map data.");
             return 1;
         }
@@ -100,21 +179,7 @@ public class CopyMapTextureCommand {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("new MapDataPacket(\n");
-        sb.append("                ").append(mapId.id()).append(",\n");
-        sb.append("                (byte) ").append(mapData.scale).append(",\n");
-        sb.append("                ").append(mapData.locked).append(",\n");
-        sb.append("                false,\n");
-        sb.append("                List.of(),\n");
-        sb.append("                new MapDataPacket.ColorContent(\n");
-        sb.append("                    (byte) 128,\n");
-        sb.append("                    (byte) 128,\n");
-        sb.append("                    (byte) 0,\n");
-        sb.append("                    (byte) 0,\n");
-        sb.append("                    decodeMapColors(\"").append(compressedBase64).append("\")\n");
-        sb.append("                )\n");
-        sb.append("            ),\n");
-        sb.append("    ");
+        sb.append("\"").append(compressedBase64).append("\"");
 
         String data = sb.toString();
         client.keyboardHandler.setClipboard(data);

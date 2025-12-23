@@ -73,7 +73,7 @@ public class PlayerSkinCommand {
                                                 String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
                                                 String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
 
-                                                String npcParams = "super(new NPCParameters() {\n" +
+                                                String npcParams = "super(new HumanConfiguration() {\n" +
                                                         "            @Override\n" +
                                                         "            public String[] holograms(HypixelPlayer player) {\n" +
                                                         "                return new String[]{\"" + hologram + "\"};\n" +

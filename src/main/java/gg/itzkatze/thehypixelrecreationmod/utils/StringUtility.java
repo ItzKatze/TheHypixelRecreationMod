@@ -10,8 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringUtility {
-    private static final Pattern COLOR_PATTERN = Pattern.compile("§[0-9a-fk-or]");
-
     /**
      * Converts a Component (Text) into a legacy-formatted string with '§' codes
      * Works for vanilla ChatFormatting colors and formatting.
@@ -56,7 +54,10 @@ public class StringUtility {
     }
 
     public static String stripColor(String s) {
-        Matcher matcher = COLOR_PATTERN.matcher(s);
-        return matcher.replaceAll("");
+        if (s == null) return "";
+
+        // Remove ALL Minecraft formatting codes (§ followed by 0-9, a-f, k-o, r, x)
+        return s.replaceAll("(?i)§[0-9a-fk-orx]", "")
+                .replaceAll("(?i)&[0-9a-fk-orx]", "");
     }
 }

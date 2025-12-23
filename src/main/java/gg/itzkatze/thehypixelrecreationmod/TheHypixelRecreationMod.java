@@ -17,9 +17,6 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 	public static final String MOD_ID = "thehypixelrecreationmod";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	// Add a static variable to track if rendering is enabled
-	public static boolean regionRenderingEnabled = true;
-
 	@Override
 	public void onInitializeClient() {
 		LOGGER.info("Initialized");
@@ -30,7 +27,8 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetArmorStandInfos.register();
 		GetScoreboardInfo.register();
 		ExportRegionsCommand.register();
-		ToggleRegionCommand.register(); // Add this line
+		ToggleRegionCommand.register();
+		AutoFillCommand.register();
 		CopyMapTextureCommand.register();
 
 		// Keybinds
