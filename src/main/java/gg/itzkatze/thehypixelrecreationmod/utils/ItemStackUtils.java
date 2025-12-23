@@ -79,4 +79,20 @@ public class ItemStackUtils {
         }
         return result;
     }
+
+    public static String getDisplayNameLegacy(ItemStack stack) {
+        Component customName = stack.get(DataComponents.CUSTOM_NAME);
+        if (customName != null) {
+            return StringUtility.toLegacyString(customName);
+        }
+        // fallback
+        return stack.getHoverName().getString();
+    }
+
+    public static String toMinestomMaterial(ItemStack stack) {
+        String id = stack.getItemHolder().unwrapKey()
+                .map(key -> key.identifier().getPath())
+                .orElse("stone");
+        return id.toUpperCase();
+    }
 }

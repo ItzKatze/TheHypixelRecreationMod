@@ -27,6 +27,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetArmorStandInfos.register();
 		GetScoreboardInfo.register();
 		ExportRegionsCommand.register();
+		CopyMapTextureCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();

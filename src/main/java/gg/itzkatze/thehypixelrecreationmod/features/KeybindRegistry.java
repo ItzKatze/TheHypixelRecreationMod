@@ -11,6 +11,7 @@ public class KeybindRegistry implements ClientModInitializer {
     public static KeyMapping checkSkinKey;
     public static KeyMapping copyLoreKey;
     public static KeyMapping copyChatKey;
+    public static KeyMapping copyGuiKey;
     private static boolean chatCopyPressed = false;
 
     @Override
@@ -33,6 +34,12 @@ public class KeybindRegistry implements ClientModInitializer {
                 KeyMapping.Category.MISC
         ));
 
+        copyGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.thehypixelrecreationmod.copygui",
+                GLFW.GLFW_KEY_B,
+                KeyMapping.Category.MISC
+        ));
+
         // Check keybinds inside of GUI's
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             ScreenKeyboardEvents.allowKeyPress(screen).register((scancode, key) -> {
@@ -46,6 +53,10 @@ public class KeybindRegistry implements ClientModInitializer {
                 }
                 if (copyChatKey.matches(key)) {
                     chatCopyPressed = true;
+                    return false;
+                }
+                if (copyGuiKey.matches(key)) {
+                    CopyCurrentGui.copyCurrentGui(client);
                     return false;
                 }
                 return true;
