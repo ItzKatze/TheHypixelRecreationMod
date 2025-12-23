@@ -31,6 +31,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetScoreboardInfo.register();
 		ExportRegionsCommand.register();
 		ToggleRegionCommand.register(); // Add this line
+		CopyMapTextureCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();
