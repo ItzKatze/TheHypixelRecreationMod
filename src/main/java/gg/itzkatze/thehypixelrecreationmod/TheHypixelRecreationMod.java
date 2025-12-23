@@ -17,6 +17,9 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 	public static final String MOD_ID = "thehypixelrecreationmod";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+	// Add a static variable to track if rendering is enabled
+	public static boolean regionRenderingEnabled = true;
+
 	@Override
 	public void onInitializeClient() {
 		LOGGER.info("Initialized");
@@ -27,16 +30,23 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetArmorStandInfos.register();
 		GetScoreboardInfo.register();
 		ExportRegionsCommand.register();
+		ToggleRegionCommand.register(); // Add this line
 		CopyMapTextureCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();
 
 		// Region tracking system
-		ClientTickEvents.END_CLIENT_TICK.register(client -> RegionTracker.update());
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			if (RegionTracker.isEnabled()) {
+				RegionTracker.update();
+			}
+		});
 
 		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
-			RegionRenderer.render(context.matrices(), context.gameRenderer().getMainCamera(), 1.0f);
+			if (RegionRenderer.isRenderEnabled()) {
+				RegionRenderer.render(context.matrices(), context.gameRenderer().getMainCamera(), 1.0f);
+			}
 		});
 
 		HypixelModAPI.getInstance().subscribeToEventPacket(ClientboundLocationPacket.class);
