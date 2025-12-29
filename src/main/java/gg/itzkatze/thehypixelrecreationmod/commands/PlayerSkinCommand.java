@@ -21,121 +21,128 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 public class PlayerSkinCommand {
+    private final static DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
+    private final static DecimalFormat df = new DecimalFormat("#.###", symbols);
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                    ClientCommandManager.literal("getskins")
-                            .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
-                                    .executes(context -> {
-                                        double radius = DoubleArgumentType.getDouble(context, "radius");
-                                        Minecraft client = Minecraft.getInstance();
-                                        Player sender = client.player;
+                ClientCommandManager.literal("getskins")
+                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                        .executes(context -> {
+                            double radius = DoubleArgumentType.getDouble(context, "radius");
+                            Minecraft client = Minecraft.getInstance();
+                            Player sender = client.player;
 
-                                        if (sender == null || client.level == null) return 1;
+                            if (sender == null || client.level == null) return 1;
 
-                                        List<Player> nearby = client.level.getEntitiesOfClass(
-                                                Player.class,
-                                                sender.getBoundingBox().inflate(radius),
-                                                ent -> ent.getType() == EntityType.PLAYER
-                                        );
+                            List<Player> nearby = client.level.getEntitiesOfClass(
+                                    Player.class,
+                                    sender.getBoundingBox().inflate(radius),
+                                    ent -> ent.getType() == EntityType.PLAYER
+                            );
 
-                                        if (nearby.isEmpty()) {
-                                            ChatUtils.warn("No players found nearby.");
-                                            return 1;
-                                        }
+                            if (nearby.isEmpty()) {
+                                ChatUtils.warn("No players found nearby.");
+                                return 1;
+                            }
 
-                                        for (Player player : nearby) {
-                                            if (player.getName().getString().equals(sender.getName().getString())) continue;
+                            for (Player player : nearby) {
+                                if (player.getName().getString().equals(sender.getName().getString())) continue;
 
-                                            GameProfile profile = player.getGameProfile();
-                                            Collection<Property> props = profile.properties().get("textures");
+                                GameProfile profile = player.getGameProfile();
+                                Collection<Property> props = profile.properties().get("textures");
 
-                                            Component playerName = Component.literal(getOverheadName(player))
-                                                    .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)));
+                                Component playerName = Component.literal(getOverheadName(player))
+                                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)));
 
-                                            if (!props.isEmpty()) {
-                                                Property texProp = props.iterator().next();
-                                                String texture = texProp.value();
-                                                String signature = texProp.signature();
+                                if (!props.isEmpty()) {
+                                    Property texProp = props.iterator().next();
+                                    String texture = texProp.value();
+                                    String signature = texProp.signature();
 
-                                                String hologram = getOverheadName(player).replace("\"", "\\\"");
-                                                String posX = String.format("%.3f", player.getX());
-                                                String posY = String.format("%.3f", player.getY());
-                                                String posZ = String.format("%.3f", player.getZ());
-                                                int yaw = Math.round(player.getYRot());
-                                                int pitch = Math.round(player.getXRot());
+                                    String hologram = getOverheadName(player).replace("\"", "\\\"");
 
-                                                String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
-                                                String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
+                                    String posX = df.format(player.getX());
+                                    String posY = df.format(player.getY());
+                                    String posZ = df.format(player.getZ());
 
-                                                String npcParams = "super(new HumanConfiguration() {\n" +
-                                                        "            @Override\n" +
-                                                        "            public String[] holograms(HypixelPlayer player) {\n" +
-                                                        "                return new String[]{\"" + hologram + "\"};\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public String signature(HypixelPlayer player) {\n" +
-                                                        "                return \"" + safeSignature + "\";\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public String texture(HypixelPlayer player) {\n" +
-                                                        "                return \"" + safeTexture + "\";\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public Pos position(HypixelPlayer player) {\n" +
-                                                        "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public boolean looking() {\n" +
-                                                        "                return true;\n" +
-                                                        "            }\n" +
-                                                        "        });";
+                                    int yaw = Math.round(player.getYRot());
+                                    int pitch = Math.round(player.getXRot());
 
-                                                Component textureMsg = Component.literal("Copy Texture (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(texture))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.GREEN))
-                                                        );
+                                    String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
+                                    String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
 
-                                                Component sigMsg = Component.literal("Copy Signature (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(signature))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.AQUA))
-                                                        );
+                                    String npcParams = "super(new HumanConfiguration() {\n" +
+                                            "            @Override\n" +
+                                            "            public String[] holograms(HypixelPlayer player) {\n" +
+                                            "                return new String[]{\"" + hologram + "\"};\n" +
+                                            "            }\n\n" +
+                                            "            @Override\n" +
+                                            "            public String signature(HypixelPlayer player) {\n" +
+                                            "                return \"" + safeSignature + "\";\n" +
+                                            "            }\n\n" +
+                                            "            @Override\n" +
+                                            "            public String texture(HypixelPlayer player) {\n" +
+                                            "                return \"" + safeTexture + "\";\n" +
+                                            "            }\n\n" +
+                                            "            @Override\n" +
+                                            "            public Pos position(HypixelPlayer player) {\n" +
+                                            "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
+                                            "            }\n\n" +
+                                            "            @Override\n" +
+                                            "            public boolean looking() {\n" +
+                                            "                return true;\n" +
+                                            "            }\n" +
+                                            "        });";
 
-                                                Component npcParaMsg = Component.literal("Copy premade NPCParameters (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
-                                                        );
+                                    Component textureMsg = Component.literal("Copy Texture (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(texture))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.GREEN))
+                                            );
 
-                                                ChatUtils.sendLine();
-                                                sender.displayClientMessage(
-                                                        Component.literal("Skin data for ").append(playerName),
-                                                        false
-                                                );
-                                                sender.displayClientMessage(textureMsg, false);
-                                                ChatUtils.sendLine();
-                                                sender.displayClientMessage(sigMsg, false);
-                                                ChatUtils.sendLine();
-                                                sender.displayClientMessage(npcParaMsg, false);
-                                                ChatUtils.sendLine();
-                                            } else {
-                                                sender.displayClientMessage(
-                                                        Component.literal("No skin data for " + getOverheadName(player)),
-                                                        false
-                                                );
-                                            }
-                                        }
+                                    Component sigMsg = Component.literal("Copy Signature (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(signature))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.AQUA))
+                                            );
 
-                                        return 1;
-                                    })
-                            )
+                                    Component npcParaMsg = Component.literal("Copy premade NPCParameters (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
+                                            );
+
+                                    ChatUtils.sendLine();
+                                    sender.displayClientMessage(
+                                            Component.literal("Skin data for ").append(playerName),
+                                            false
+                                    );
+                                    sender.displayClientMessage(textureMsg, false);
+                                    ChatUtils.sendLine();
+                                    sender.displayClientMessage(sigMsg, false);
+                                    ChatUtils.sendLine();
+                                    sender.displayClientMessage(npcParaMsg, false);
+                                    ChatUtils.sendLine();
+                                } else {
+                                    sender.displayClientMessage(
+                                            Component.literal("No skin data for " + getOverheadName(player)),
+                                            false
+                                    );
+                                }
+                            }
+
+                            return 1;
+                        })
+                    )
             );
         });
     }
