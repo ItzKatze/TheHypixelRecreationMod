@@ -1,5 +1,6 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -27,10 +28,10 @@ public class CopyMapTextureCommand {
             dispatcher.register(
                     ClientCommandManager.literal("copymaptexture")
                             .executes(ctx -> executeSingle(ctx.getSource().getClient()))
-                            .then(ClientCommandManager.literal("all")
-                                    .executes(ctx -> executeAll(ctx.getSource().getClient()))
-                            )
-            );
+                            .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                                    .executes(context -> executeAll(context.getSource().getClient(),
+                                            (int) DoubleArgumentType.getDouble(context, "radius")))
+            ));
         });
     }
 
@@ -56,7 +57,7 @@ public class CopyMapTextureCommand {
         return null;
     }
 
-    private static int executeAll(Minecraft client) {
+    private static int executeAll(Minecraft client, int radius) {
         Player player = client.player;
 
         if (player == null || client.level == null) {
@@ -76,7 +77,7 @@ public class CopyMapTextureCommand {
         Vec3 right = forward.cross(up).normalize();
 
         // Collect nearby item frames on same plane
-        AABB box = anchor.getBoundingBox().inflate(6);
+        AABB box = anchor.getBoundingBox().inflate(radius);
         var frames = client.level.getEntitiesOfClass(ItemFrame.class, box, f ->
                 f.getDirection() == anchor.getDirection()
         );
@@ -117,7 +118,7 @@ public class CopyMapTextureCommand {
             } catch (IOException ignored) {}
         }
 
-        if (out.length() == 0) {
+        if (out.isEmpty()) {
             ChatUtils.error("No map data found.");
             return 1;
         }
