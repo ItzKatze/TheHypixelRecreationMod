@@ -15,7 +15,7 @@ import java.util.List;
 
 public class RegionRenderer {
 
-    private static boolean renderEnabled = true;
+    private static boolean renderEnabled = false;
 
     public static boolean isRenderEnabled() {
         return renderEnabled;
