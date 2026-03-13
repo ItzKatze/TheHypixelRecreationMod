@@ -6,6 +6,8 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.kyori.adventure.platform.modcommon.impl.client.MinecraftClientAudiencesImpl;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -21,10 +23,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 public class PlayerSkinCommand {
+    private final static DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
+    private final static DecimalFormat df = new DecimalFormat("#.###", symbols);
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -55,18 +62,16 @@ public class PlayerSkinCommand {
                                             GameProfile profile = player.getGameProfile();
                                             Collection<Property> props = profile.properties().get("textures");
 
-                                            Component playerName = Component.literal(getOverheadName(player))
-                                                    .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)));
-
                                             if (!props.isEmpty()) {
                                                 Property texProp = props.iterator().next();
                                                 String texture = texProp.value();
                                                 String signature = texProp.signature();
 
                                                 String hologram = getOverheadName(player).replace("\"", "\\\"");
-                                                String posX = String.format("%.3f", player.getX());
-                                                String posY = String.format("%.3f", player.getY());
-                                                String posZ = String.format("%.3f", player.getZ());
+                                                String posX = df.format(player.getX());
+                                                String posY = df.format(player.getY());
+                                                String posZ = df.format(player.getZ());
+
                                                 int yaw = Math.round(player.getYRot());
                                                 int pitch = Math.round(player.getXRot());
 
@@ -76,7 +81,7 @@ public class PlayerSkinCommand {
                                                 String npcParams = "super(new HumanConfiguration() {\n" +
                                                         "            @Override\n" +
                                                         "            public String[] holograms(HypixelPlayer player) {\n" +
-                                                        "                return new String[]{\"" + hologram + "\"};\n" +
+                                                        "                return new String[]{\"" + hologram + "\", \"§e§lCLICK\"};\n" +
                                                         "            }\n\n" +
                                                         "            @Override\n" +
                                                         "            public String signature(HypixelPlayer player) {\n" +
@@ -91,7 +96,7 @@ public class PlayerSkinCommand {
                                                         "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
                                                         "            }\n\n" +
                                                         "            @Override\n" +
-                                                        "            public boolean looking() {\n" +
+                                                        "            public boolean looking(HypixelPlayer player) {\n" +
                                                         "                return true;\n" +
                                                         "            }\n" +
                                                         "        });";
@@ -114,11 +119,12 @@ public class PlayerSkinCommand {
                                                                 .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
                                                         );
 
-                                                ChatUtils.sendLine();
+                                                Component playerName = Component.literal(getOverheadName(player));
                                                 sender.displayClientMessage(
                                                         Component.literal("Skin data for ").append(playerName),
                                                         false
                                                 );
+                                                ChatUtils.sendLine();
                                                 sender.displayClientMessage(textureMsg, false);
                                                 ChatUtils.sendLine();
                                                 sender.displayClientMessage(sigMsg, false);
@@ -152,7 +158,7 @@ public class PlayerSkinCommand {
             if (e.getBoundingBox().intersects(boxAbove)) {
                 if ((e instanceof Display.TextDisplay || e instanceof ArmorStand)
                         && e.hasCustomName()) {
-                    String raw = e.getCustomName().getString().replaceAll("§.", "").trim();
+                    String raw = LegacyComponentSerializer.legacySection().serialize(MinecraftClientAudiencesImpl.INSTANCE.asAdventure(e.getCustomName()));
                     if (!raw.isEmpty()) return raw;
                 }
             }

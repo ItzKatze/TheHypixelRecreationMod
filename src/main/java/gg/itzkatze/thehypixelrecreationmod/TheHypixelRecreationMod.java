@@ -5,6 +5,7 @@ import gg.itzkatze.thehypixelrecreationmod.features.KeybindRegistry;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionRenderer;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.hypixel.modapi.HypixelModAPI;
@@ -30,6 +31,8 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		ToggleRegionCommand.register();
 		AutoFillCommand.register();
 		CopyMapTextureCommand.register();
+		CopyBiomeData.register();
+		FetchBlockDisplaysCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();

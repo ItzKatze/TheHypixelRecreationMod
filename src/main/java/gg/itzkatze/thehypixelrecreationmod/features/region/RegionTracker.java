@@ -15,7 +15,7 @@ public class RegionTracker {
     private static final int REGION_STABILITY_THRESHOLD = 2;
     private static int regionStableTicks = 0;
     private static boolean debugMode = true;
-    private static boolean enabled = true;
+    private static boolean enabled = false;
     private static boolean autoFillEnabled = true; // New: Enable/disable auto-filling
 
     // Extended color palette with more distinct colors

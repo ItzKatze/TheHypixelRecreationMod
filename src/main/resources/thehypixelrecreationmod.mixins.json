@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"HandledScreenAccessor",
-		"ChatComponentMixin"
+		"ChatComponentMixin",
+		"EditWorldScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
