@@ -59,9 +59,8 @@ public class RegionTracker {
         if (!debugMode) return;
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            client.player.displayClientMessage(
-                    Component.literal("§7[DEBUG] " + message),
-                    false
+            client.player.sendSystemMessage(
+                    Component.literal("§7[DEBUG] " + message)
             );
         }
         System.out.println("[RegionTracker DEBUG] " + message);
@@ -76,9 +75,8 @@ public class RegionTracker {
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             String status = state ? "§aENABLED" : "§cDISABLED";
-            client.player.displayClientMessage(
-                    Component.literal("§7Region tracking " + status),
-                    false
+            client.player.sendSystemMessage(
+                    Component.literal("§7Region tracking " + status)
             );
         }
         debug("Region tracking " + (state ? "enabled" : "disabled"));
@@ -93,9 +91,8 @@ public class RegionTracker {
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             String status = state ? "§aENABLED" : "§cDISABLED";
-            client.player.displayClientMessage(
-                    Component.literal("§7Auto-fill " + status),
-                    false
+            client.player.sendSystemMessage(
+                    Component.literal("§7Auto-fill " + status)
             );
         }
         debug("Auto-fill " + (state ? "enabled" : "disabled"));
@@ -248,9 +245,8 @@ public class RegionTracker {
             debug("§aAuto-fill completed: " + totalFilled + " total blocks filled in " + region);
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.displayClientMessage(
-                        Component.literal("§aAuto-fill: +" + totalFilled + " blocks in " + region),
-                        true
+                client.player.sendSystemMessage(
+                        Component.literal("§aAuto-fill: +" + totalFilled + " blocks in " + region)
                 );
             }
         } else {
@@ -356,7 +352,7 @@ public class RegionTracker {
         List<BlockPos> pointList = new ArrayList<>(points);
 
         // Find the point with the lowest Y (and lowest X if tie)
-        BlockPos lowest = pointList.get(0);
+        BlockPos lowest = pointList.getFirst();
         for (BlockPos p : pointList) {
             if (p.getZ() < lowest.getZ() || (p.getZ() == lowest.getZ() && p.getX() < lowest.getX())) {
                 lowest = p;
@@ -677,9 +673,8 @@ public class RegionTracker {
         if (blocks != null && blocks.size() % 10 == 0) {
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.displayClientMessage(
-                        Component.literal("§7Mapped " + blocks.size() + " blocks for §e" + region),
-                        true
+                client.player.sendSystemMessage(
+                        Component.literal("§7Mapped " + blocks.size() + " blocks for §e" + region)
                 );
             }
         }

@@ -2,16 +2,14 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.network.chat.Component;
 
 public class AutoFillCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("regionfill")
+            dispatcher.register(ClientCommands.literal("regionfill")
                     .executes(context -> {
                         RegionTracker.toggleAutoFill();
                         String status = RegionTracker.isAutoFillEnabled() ? "§aENABLED" : "§cDISABLED";
@@ -20,7 +18,7 @@ public class AutoFillCommand {
                         );
                         return 1;
                     })
-                    .then(ClientCommandManager.literal("enable")
+                    .then(ClientCommands.literal("enable")
                             .executes(context -> {
                                 RegionTracker.setAutoFillEnabled(true);
                                 context.getSource().sendFeedback(
@@ -29,7 +27,7 @@ public class AutoFillCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("disable")
+                    .then(ClientCommands.literal("disable")
                             .executes(context -> {
                                 RegionTracker.setAutoFillEnabled(false);
                                 context.getSource().sendFeedback(
@@ -38,7 +36,7 @@ public class AutoFillCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("fillnow")
+                    .then(ClientCommands.literal("fillnow")
                             .executes(context -> {
                                 // Fill all existing regions
                                 int totalFilled = 0;
@@ -51,7 +49,7 @@ public class AutoFillCommand {
                                 );
                                 return 1;
                             })
-                            .then(ClientCommandManager.argument("region", StringArgumentType.string())
+                            .then(ClientCommands.argument("region", StringArgumentType.string())
                                     .executes(context -> {
                                         String region = StringArgumentType.getString(context, "region");
                                         RegionTracker.fillEnclosedAreaManually(region.toUpperCase());
@@ -62,7 +60,7 @@ public class AutoFillCommand {
                                     })
                             )
                     )
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                             .executes(context -> {
                                 boolean autoFill = RegionTracker.isAutoFillEnabled();
                                 String status = autoFill ? "§aENABLED" : "§cDISABLED";

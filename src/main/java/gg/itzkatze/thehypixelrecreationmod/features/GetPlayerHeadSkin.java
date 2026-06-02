@@ -24,12 +24,12 @@ public class GetPlayerHeadSkin {
                                 .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy again")))
                         )
                 );
-        client.player.displayClientMessage(M, false);
+        client.player.sendSystemMessage(M);
         var prop = ItemStackUtils.getPlayerHeadTextureProperty(hoveredStack);
         if (prop == null) {
             Component errorMessage = Component.literal("No texture found on hovered item!")
                     .withStyle(ChatFormatting.RED);
-            client.player.displayClientMessage(errorMessage, false);
+            client.player.sendSystemMessage(errorMessage);
             return;
         }
 
@@ -51,17 +51,16 @@ public class GetPlayerHeadSkin {
                         )
                 );
 
-        client.player.displayClientMessage(mainMessage, false);
+        client.player.sendSystemMessage(mainMessage);
 
         // Also print the actual JSON in chat (may be long, but that's what you asked for)
-        client.player.displayClientMessage(
+        client.player.sendSystemMessage(
                 Component.literal(payload)
                         .withStyle(style -> style
                                 .withClickEvent(new ClickEvent.CopyToClipboard(payload))
                                 .withColor(ChatFormatting.GRAY)
                                 .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy")))
-                        ),
-                false
+                        )
         );
     }
 }

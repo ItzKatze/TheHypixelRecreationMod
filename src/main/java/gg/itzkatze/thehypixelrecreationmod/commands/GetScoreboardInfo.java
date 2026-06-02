@@ -2,8 +2,9 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,7 @@ public class GetScoreboardInfo {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                    ClientCommandManager.literal("getscoreboardinfo")
+                    ClientCommands.literal("getscoreboardinfo")
                             .executes(ctx -> {
                                 Minecraft client = Minecraft.getInstance();
                                 if (client.level == null || client.player == null) return 1;
@@ -49,7 +50,7 @@ public class GetScoreboardInfo {
 
                                 ChatUtils.sendLine();
 
-                                client.player.displayClientMessage(
+                                client.player.sendSystemMessage(
                                         Component.empty()
                                                 .append(objective.getDisplayName())
                                                 .withStyle(
@@ -60,23 +61,21 @@ public class GetScoreboardInfo {
                                                                         )
                                                                 )
                                                         )
-                                                ),
-                                        false
+                                                )
                                 );
 
                                 for (PlayerScoreEntry entry : entries) {
                                     Component line = renderEntry(scoreboard, entry);
                                     String legacy = StringUtility.toLegacyString(line);
 
-                                    client.player.displayClientMessage(
+                                    client.player.sendSystemMessage(
                                             Component.empty()
                                                     .append(line)
                                                     .withStyle(
                                                             Style.EMPTY.withClickEvent(
                                                                     new ClickEvent.CopyToClipboard(legacy)
                                                             )
-                                                    ),
-                                            false
+                                                    )
                                     );
                                 }
 

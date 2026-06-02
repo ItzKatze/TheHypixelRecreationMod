@@ -107,7 +107,7 @@ public class CopyCurrentGui {
                         ))
                 );
 
-        client.player.displayClientMessage(message, false);
+        client.player.sendSystemMessage(message);
     }
 
     private static List<Slot> getContainerSlots(AbstractContainerScreen<?> screen) {

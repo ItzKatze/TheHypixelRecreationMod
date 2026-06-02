@@ -4,10 +4,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.kyori.adventure.platform.modcommon.impl.client.MinecraftClientAudiencesImpl;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -36,8 +34,8 @@ public class PlayerSkinCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                    ClientCommandManager.literal("getskins")
-                            .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                    ClientCommands.literal("getskins")
+                            .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
                                     .executes(context -> {
                                         double radius = DoubleArgumentType.getDouble(context, "radius");
                                         Minecraft client = Minecraft.getInstance();
@@ -120,21 +118,19 @@ public class PlayerSkinCommand {
                                                         );
 
                                                 Component playerName = Component.literal(getOverheadName(player));
-                                                sender.displayClientMessage(
-                                                        Component.literal("Skin data for ").append(playerName),
-                                                        false
+                                                sender.sendSystemMessage(
+                                                        Component.literal("Skin data for ").append(playerName)
                                                 );
                                                 ChatUtils.sendLine();
-                                                sender.displayClientMessage(textureMsg, false);
+                                                sender.sendSystemMessage(textureMsg);
                                                 ChatUtils.sendLine();
-                                                sender.displayClientMessage(sigMsg, false);
+                                                sender.sendSystemMessage(sigMsg);
                                                 ChatUtils.sendLine();
-                                                sender.displayClientMessage(npcParaMsg, false);
+                                                sender.sendSystemMessage(npcParaMsg);
                                                 ChatUtils.sendLine();
                                             } else {
-                                                sender.displayClientMessage(
-                                                        Component.literal("No skin data for " + getOverheadName(player)),
-                                                        false
+                                                sender.sendSystemMessage(
+                                                        Component.literal("No skin data for " + getOverheadName(player))
                                                 );
                                             }
                                         }
@@ -158,12 +154,37 @@ public class PlayerSkinCommand {
             if (e.getBoundingBox().intersects(boxAbove)) {
                 if ((e instanceof Display.TextDisplay || e instanceof ArmorStand)
                         && e.hasCustomName()) {
-                    String raw = LegacyComponentSerializer.legacySection().serialize(MinecraftClientAudiencesImpl.INSTANCE.asAdventure(e.getCustomName()));
+
+                    String raw = toLegacyVanilla(e.getCustomName());
                     if (!raw.isEmpty()) return raw;
                 }
             }
         }
 
         return "Unknown";
+    }
+
+    public static String toLegacyVanilla(Component component) {
+        StringBuilder out = new StringBuilder();
+
+        component.visit((style, text) -> {
+            var color = style.getColor();
+
+            if (color != null) {
+                var fmt = net.minecraft.ChatFormatting.getByName(color.serialize());
+                if (fmt != null) out.append(fmt); // emits §e, §6, etc.
+            }
+
+            if (style.isBold()) out.append(net.minecraft.ChatFormatting.BOLD);
+            if (style.isItalic()) out.append(net.minecraft.ChatFormatting.ITALIC);
+            if (style.isUnderlined()) out.append(net.minecraft.ChatFormatting.UNDERLINE);
+            if (style.isStrikethrough()) out.append(net.minecraft.ChatFormatting.STRIKETHROUGH);
+            if (style.isObfuscated()) out.append(net.minecraft.ChatFormatting.OBFUSCATED);
+
+            out.append(text);
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+
+        return out.toString();
     }
 }

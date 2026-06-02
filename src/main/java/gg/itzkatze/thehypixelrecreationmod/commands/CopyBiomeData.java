@@ -1,7 +1,8 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
@@ -15,7 +16,7 @@ public class CopyBiomeData {
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("copybiomedata")
+            dispatcher.register(ClientCommands.literal("copybiomedata")
                     .executes(context -> {
                         // copy basic biome data for where the player currently is
                         try {

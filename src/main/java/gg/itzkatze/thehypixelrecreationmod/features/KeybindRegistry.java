@@ -1,7 +1,7 @@
 package gg.itzkatze.thehypixelrecreationmod.features;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.minecraft.client.KeyMapping;
@@ -16,25 +16,25 @@ public class KeybindRegistry implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        checkSkinKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        checkSkinKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.thehypixelrecreationmod.copyplayerheadskin",
                 GLFW.GLFW_KEY_K,
                 KeyMapping.Category.MISC
         ));
 
-        copyLoreKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        copyLoreKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.thehypixelrecreationmod.copylore",
                 GLFW.GLFW_KEY_L,
                 KeyMapping.Category.MISC
         ));
 
-        copyChatKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        copyChatKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.thehypixelrecreationmod.copychat",
                 GLFW.GLFW_KEY_P,
                 KeyMapping.Category.MISC
         ));
 
-        copyGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        copyGuiKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.thehypixelrecreationmod.copygui",
                 GLFW.GLFW_KEY_B,
                 KeyMapping.Category.MISC

@@ -157,7 +157,7 @@ public class ItemStackUtils {
     }
 
     public static String toMinestomMaterial(ItemStack stack) {
-        String id = stack.getItemHolder().unwrapKey()
+        String id = stack.getItem().builtInRegistryHolder().unwrapKey()
                 .map(key -> key.identifier().getPath())
                 .orElse("stone");
         return id.toUpperCase();

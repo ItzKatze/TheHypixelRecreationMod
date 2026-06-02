@@ -3,8 +3,9 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.math.Transformation;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.Rotations;
@@ -46,15 +47,15 @@ public final class FetchBlockDisplaysCommand {
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-            ClientCommandManager.literal("fetchblockdisplays")
-                .then(ClientCommandManager.argument("area", DoubleArgumentType.doubleArg(0))
+            ClientCommands.literal("fetchblockdisplays")
+                .then(ClientCommands.argument("area", DoubleArgumentType.doubleArg(0))
                     .executes(context -> execute(
                         DoubleArgumentType.getDouble(context, "area"),
                         null
                     ))
-                    .then(ClientCommandManager.argument("originX", DoubleArgumentType.doubleArg())
-                        .then(ClientCommandManager.argument("originY", DoubleArgumentType.doubleArg())
-                            .then(ClientCommandManager.argument("originZ", DoubleArgumentType.doubleArg())
+                    .then(ClientCommands.argument("originX", DoubleArgumentType.doubleArg())
+                        .then(ClientCommands.argument("originY", DoubleArgumentType.doubleArg())
+                            .then(ClientCommands.argument("originZ", DoubleArgumentType.doubleArg())
                                 .executes(context -> execute(
                                     DoubleArgumentType.getDouble(context, "area"),
                                     new ExportOrigin(
@@ -197,12 +198,12 @@ public final class FetchBlockDisplaysCommand {
         final var renderState = display.renderState();
         final var transformation = renderState != null
             ? renderState.transformation().get(1.0f)
-            : Transformation.identity();
+            : new Transformation(new org.joml.Vector3f(), new org.joml.Quaternionf(), new org.joml.Vector3f(1, 1, 1), new org.joml.Quaternionf());
 
-        fields.add(fieldIndent + "\"translation\": " + vector3ToJson(transformation.getTranslation()));
-        fields.add(fieldIndent + "\"scale\": " + vector3ToJson(transformation.getScale()));
-        fields.add(fieldIndent + "\"leftRotation\": " + quaternionToJson(transformation.getLeftRotation()));
-        fields.add(fieldIndent + "\"rightRotation\": " + quaternionToJson(transformation.getRightRotation()));
+        fields.add(fieldIndent + "\"translation\": " + vector3ToJson(transformation.translation()));
+        fields.add(fieldIndent + "\"scale\": " + vector3ToJson(transformation.scale()));
+        fields.add(fieldIndent + "\"leftRotation\": " + quaternionToJson(transformation.leftRotation()));
+        fields.add(fieldIndent + "\"rightRotation\": " + quaternionToJson(transformation.rightRotation()));
     }
 
     private static void appendBlockDisplayFields(List<String> fields, String fieldIndent, BlockDisplay blockDisplay) {
@@ -217,7 +218,7 @@ public final class FetchBlockDisplaysCommand {
 
         fields.add(fieldIndent + "\"id\": \"" + escapeJson(blockId) + "\"");
         if (blockState != null) {
-            fields.add(fieldIndent + "\"blockState\": " + blockStateToJson(blockState));
+            fields.add(fieldIndent + "\"blockState\": \"" + escapeJson(blockState.toString()) + "\"");
         }
     }
 
@@ -290,7 +291,7 @@ public final class FetchBlockDisplaysCommand {
         final var out = new StringBuilder();
         out.append("{");
 
-        final var itemId = stack.getItemHolder().unwrapKey()
+        final var itemId = stack.getItem().builtInRegistryHolder().unwrapKey()
             .map(key -> key.identifier().toString())
             .orElse("minecraft:air");
 
@@ -315,21 +316,8 @@ public final class FetchBlockDisplaysCommand {
     }
 
     private static String blockStateToJson(BlockState blockState) {
-        final var out = new StringBuilder();
-        out.append("{");
-        var index = 0;
-        for (var entry : blockState.getValues().entrySet()) {
-            if (index++ > 0) {
-                out.append(", ");
-            }
-            out.append("\"")
-                .append(escapeJson(entry.getKey().getName()))
-                .append("\": \"")
-                .append(escapeJson(entry.getValue().toString()))
-                .append("\"");
-        }
-        out.append("}");
-        return out.toString();
+        // to avoid depending on the exact property API shape across mappings, serialize a simple string
+        return "{\"state\": \"" + escapeJson(blockState.toString()) + "\"}";
     }
 
     private static String escapeJson(String value) {

@@ -70,7 +70,7 @@ public abstract class EditWorldScreenMixin extends net.minecraft.client.gui.scre
             btn.setMessage(Component.literal("Processing..."));
             btn.active = false;
 
-            Thread.ofVirtual().name("thrm-polar-convert").start(() -> {
+            Thread.ofVirtual().name("polar-convert").start(() -> {
                 boolean success = convertToPolar(
                         levelAccess.getLevelDirectory().path(),
                         Path.of(levelAccess.getLevelDirectory().path().toString(), levelAccess.getLevelId() + ".polar")
@@ -91,8 +91,8 @@ public abstract class EditWorldScreenMixin extends net.minecraft.client.gui.scre
             });
         }).width(98).build();
 
-        Button optimizeButton = Button.builder(OPTIMIZE_BUTTON, buttonx -> {
-            Minecraft minecraft = Minecraft.getInstance(); // oder im Mixin zwischenspeichern, wenn du willst
+        Button optimizeButton = Button.builder(OPTIMIZE_BUTTON, _ -> {
+            Minecraft minecraft = Minecraft.getInstance();
             minecraft.setScreen(new BackupConfirmScreen(() -> minecraft.setScreen((EditWorldScreen)(Object)this),
                     (bl, bl2) -> {
                         if (bl) {

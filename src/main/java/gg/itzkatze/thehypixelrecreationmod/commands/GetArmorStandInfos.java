@@ -3,8 +3,9 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -25,8 +26,8 @@ public class GetArmorStandInfos {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                    ClientCommandManager.literal("getarmorstandinfos")
-                            .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                    ClientCommands.literal("getarmorstandinfos")
+                            .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
                                     .executes(context -> {
                                         double radius = DoubleArgumentType.getDouble(context, "radius");
                                         Minecraft client = Minecraft.getInstance();
@@ -93,7 +94,7 @@ public class GetArmorStandInfos {
                         )
                 );
 
-        player.displayClientMessage(coordsMessage, false);
+        player.sendSystemMessage(coordsMessage);
 
         for (Map.Entry<String, ItemStack> entry : stacks.entrySet()) {
             String name = entry.getKey();
@@ -107,20 +108,18 @@ public class GetArmorStandInfos {
                 String textureId = ItemStackUtils.getPlayerHeadTexture(stack);
                 client.keyboardHandler.setClipboard(textureId);
 
-                player.displayClientMessage(
+                player.sendSystemMessage(
                         Component.literal("Copied Texture-ID: ")
-                                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x55FFFF))),
-                        false
+                                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x55FFFF)))
                 );
 
-                player.displayClientMessage(
+                player.sendSystemMessage(
                         Component.literal(textureId)
                                 .withStyle(
                                         Style.EMPTY.withClickEvent(
                                                 new ClickEvent.CopyToClipboard(textureId)
                                         )
-                                ),
-                        false
+                                )
                 );
             }
         }

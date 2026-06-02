@@ -2,8 +2,8 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
@@ -28,8 +28,8 @@ public class CopyMapTextureCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                ClientCommandManager.literal("copymaptexture")
-                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+                ClientCommands.literal("copymaptexture")
+                    .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
                         .executes(context -> {
                             double radius = DoubleArgumentType.getDouble(context, "radius");
                             Minecraft client = Minecraft.getInstance();
