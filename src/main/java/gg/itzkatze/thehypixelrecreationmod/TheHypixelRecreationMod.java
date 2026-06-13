@@ -2,12 +2,11 @@ package gg.itzkatze.thehypixelrecreationmod;
 
 import gg.itzkatze.thehypixelrecreationmod.commands.*;
 import gg.itzkatze.thehypixelrecreationmod.features.KeybindRegistry;
-import gg.itzkatze.thehypixelrecreationmod.features.region.RegionRenderer;
+import gg.itzkatze.thehypixelrecreationmod.features.SpraySchemaRecorder;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
 import gg.itzkatze.thehypixelrecreationmod.features.worldexport.ChunkExportRecorder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.hypixel.modapi.HypixelModAPI;
 import net.hypixel.modapi.fabric.event.HypixelModAPICallback;
 import net.hypixel.modapi.packet.impl.clientbound.event.ClientboundLocationPacket;
@@ -34,6 +33,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		CopyMapTextureCommand.register();
 		CopyBiomeData.register();
 		FetchBlockDisplaysCommand.register();
+		SpraySchemaRecorderCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();
@@ -44,6 +44,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 				RegionTracker.update();
 			}
 			ChunkExportRecorder.tick();
+			SpraySchemaRecorder.tick();
 		});
 
 		HypixelModAPI.getInstance().subscribeToEventPacket(ClientboundLocationPacket.class);
