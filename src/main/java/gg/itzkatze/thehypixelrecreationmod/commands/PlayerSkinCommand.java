@@ -41,24 +41,24 @@ public class PlayerSkinCommand {
                                         Minecraft client = Minecraft.getInstance();
                                         Player sender = client.player;
 
-                                        if (sender == null || client.level == null) return 1;
+                            if (sender == null || client.level == null) return 1;
 
-                                        List<Player> nearby = client.level.getEntitiesOfClass(
-                                                Player.class,
-                                                sender.getBoundingBox().inflate(radius),
-                                                ent -> ent.getType() == EntityType.PLAYER
-                                        );
+                            List<Player> nearby = client.level.getEntitiesOfClass(
+                                    Player.class,
+                                    sender.getBoundingBox().inflate(radius),
+                                    ent -> ent.getType() == EntityType.PLAYER
+                            );
 
-                                        if (nearby.isEmpty()) {
-                                            ChatUtils.warn("No players found nearby.");
-                                            return 1;
-                                        }
+                            if (nearby.isEmpty()) {
+                                ChatUtils.warn("No players found nearby.");
+                                return 1;
+                            }
 
-                                        for (Player player : nearby) {
-                                            if (player.getName().getString().equals(sender.getName().getString())) continue;
+                            for (Player player : nearby) {
+                                if (player.getName().getString().equals(sender.getName().getString())) continue;
 
-                                            GameProfile profile = player.getGameProfile();
-                                            Collection<Property> props = profile.properties().get("textures");
+                                GameProfile profile = player.getGameProfile();
+                                Collection<Property> props = profile.properties().get("textures");
 
                                             if (!props.isEmpty()) {
                                                 Property texProp = props.iterator().next();
@@ -99,23 +99,23 @@ public class PlayerSkinCommand {
                                                         "            }\n" +
                                                         "        });";
 
-                                                Component textureMsg = Component.literal("Copy Texture (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(texture))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.GREEN))
-                                                        );
+                                    Component textureMsg = Component.literal("Copy Texture (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(texture))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.GREEN))
+                                            );
 
-                                                Component sigMsg = Component.literal("Copy Signature (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(signature))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.AQUA))
-                                                        );
+                                    Component sigMsg = Component.literal("Copy Signature (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(signature))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.AQUA))
+                                            );
 
-                                                Component npcParaMsg = Component.literal("Copy premade NPCParameters (click)")
-                                                        .setStyle(Style.EMPTY
-                                                                .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
-                                                                .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
-                                                        );
+                                    Component npcParaMsg = Component.literal("Copy premade NPCParameters (click)")
+                                            .setStyle(Style.EMPTY
+                                                    .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
+                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
+                                            );
 
                                                 Component playerName = Component.literal(getOverheadName(player));
                                                 sender.sendSystemMessage(
