@@ -4,8 +4,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -34,12 +34,12 @@ public class PlayerSkinCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
-                ClientCommandManager.literal("getskins")
-                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
-                        .executes(context -> {
-                            double radius = DoubleArgumentType.getDouble(context, "radius");
-                            Minecraft client = Minecraft.getInstance();
-                            Player sender = client.player;
+                    ClientCommands.literal("getskins")
+                            .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
+                                    .executes(context -> {
+                                        double radius = DoubleArgumentType.getDouble(context, "radius");
+                                        Minecraft client = Minecraft.getInstance();
+                                        Player sender = client.player;
 
                             if (sender == null || client.level == null) return 1;
 
@@ -60,48 +60,44 @@ public class PlayerSkinCommand {
                                 GameProfile profile = player.getGameProfile();
                                 Collection<Property> props = profile.properties().get("textures");
 
-                                Component playerName = Component.literal(getOverheadName(player))
-                                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)));
+                                            if (!props.isEmpty()) {
+                                                Property texProp = props.iterator().next();
+                                                String texture = texProp.value();
+                                                String signature = texProp.signature();
 
-                                if (!props.isEmpty()) {
-                                    Property texProp = props.iterator().next();
-                                    String texture = texProp.value();
-                                    String signature = texProp.signature();
+                                                String hologram = getOverheadName(player).replace("\"", "\\\"");
+                                                String posX = df.format(player.getX());
+                                                String posY = df.format(player.getY());
+                                                String posZ = df.format(player.getZ());
 
-                                    String hologram = getOverheadName(player).replace("\"", "\\\"");
+                                                int yaw = Math.round(player.getYRot());
+                                                int pitch = Math.round(player.getXRot());
 
-                                    String posX = df.format(player.getX());
-                                    String posY = df.format(player.getY());
-                                    String posZ = df.format(player.getZ());
+                                                String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
+                                                String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
 
-                                    int yaw = Math.round(player.getYRot());
-                                    int pitch = Math.round(player.getXRot());
-
-                                    String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
-                                    String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
-
-                                    String npcParams = "super(new HumanConfiguration() {\n" +
-                                            "            @Override\n" +
-                                            "            public String[] holograms(HypixelPlayer player) {\n" +
-                                            "                return new String[]{\"" + hologram + "\"};\n" +
-                                            "            }\n\n" +
-                                            "            @Override\n" +
-                                            "            public String signature(HypixelPlayer player) {\n" +
-                                            "                return \"" + safeSignature + "\";\n" +
-                                            "            }\n\n" +
-                                            "            @Override\n" +
-                                            "            public String texture(HypixelPlayer player) {\n" +
-                                            "                return \"" + safeTexture + "\";\n" +
-                                            "            }\n\n" +
-                                            "            @Override\n" +
-                                            "            public Pos position(HypixelPlayer player) {\n" +
-                                            "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
-                                            "            }\n\n" +
-                                            "            @Override\n" +
-                                            "            public boolean looking() {\n" +
-                                            "                return true;\n" +
-                                            "            }\n" +
-                                            "        });";
+                                                String npcParams = "super(new HumanConfiguration() {\n" +
+                                                        "            @Override\n" +
+                                                        "            public String[] holograms(HypixelPlayer player) {\n" +
+                                                        "                return new String[]{\"" + hologram + "\", \"§e§lCLICK\"};\n" +
+                                                        "            }\n\n" +
+                                                        "            @Override\n" +
+                                                        "            public String signature(HypixelPlayer player) {\n" +
+                                                        "                return \"" + safeSignature + "\";\n" +
+                                                        "            }\n\n" +
+                                                        "            @Override\n" +
+                                                        "            public String texture(HypixelPlayer player) {\n" +
+                                                        "                return \"" + safeTexture + "\";\n" +
+                                                        "            }\n\n" +
+                                                        "            @Override\n" +
+                                                        "            public Pos position(HypixelPlayer player) {\n" +
+                                                        "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
+                                                        "            }\n\n" +
+                                                        "            @Override\n" +
+                                                        "            public boolean looking(HypixelPlayer player) {\n" +
+                                                        "                return true;\n" +
+                                                        "            }\n" +
+                                                        "        });";
 
                                     Component textureMsg = Component.literal("Copy Texture (click)")
                                             .setStyle(Style.EMPTY
@@ -121,28 +117,27 @@ public class PlayerSkinCommand {
                                                     .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
                                             );
 
-                                    ChatUtils.sendLine();
-                                    sender.displayClientMessage(
-                                            Component.literal("Skin data for ").append(playerName),
-                                            false
-                                    );
-                                    sender.displayClientMessage(textureMsg, false);
-                                    ChatUtils.sendLine();
-                                    sender.displayClientMessage(sigMsg, false);
-                                    ChatUtils.sendLine();
-                                    sender.displayClientMessage(npcParaMsg, false);
-                                    ChatUtils.sendLine();
-                                } else {
-                                    sender.displayClientMessage(
-                                            Component.literal("No skin data for " + getOverheadName(player)),
-                                            false
-                                    );
-                                }
-                            }
+                                                Component playerName = Component.literal(getOverheadName(player));
+                                                sender.sendSystemMessage(
+                                                        Component.literal("Skin data for ").append(playerName)
+                                                );
+                                                ChatUtils.sendLine();
+                                                sender.sendSystemMessage(textureMsg);
+                                                ChatUtils.sendLine();
+                                                sender.sendSystemMessage(sigMsg);
+                                                ChatUtils.sendLine();
+                                                sender.sendSystemMessage(npcParaMsg);
+                                                ChatUtils.sendLine();
+                                            } else {
+                                                sender.sendSystemMessage(
+                                                        Component.literal("No skin data for " + getOverheadName(player))
+                                                );
+                                            }
+                                        }
 
-                            return 1;
-                        })
-                    )
+                                        return 1;
+                                    })
+                            )
             );
         });
     }
@@ -159,12 +154,37 @@ public class PlayerSkinCommand {
             if (e.getBoundingBox().intersects(boxAbove)) {
                 if ((e instanceof Display.TextDisplay || e instanceof ArmorStand)
                         && e.hasCustomName()) {
-                    String raw = e.getCustomName().getString().replaceAll("§.", "").trim();
+
+                    String raw = toLegacyVanilla(e.getCustomName());
                     if (!raw.isEmpty()) return raw;
                 }
             }
         }
 
         return "Unknown";
+    }
+
+    public static String toLegacyVanilla(Component component) {
+        StringBuilder out = new StringBuilder();
+
+        component.visit((style, text) -> {
+            var color = style.getColor();
+
+            if (color != null) {
+                var fmt = net.minecraft.ChatFormatting.getByName(color.serialize());
+                if (fmt != null) out.append(fmt); // emits §e, §6, etc.
+            }
+
+            if (style.isBold()) out.append(net.minecraft.ChatFormatting.BOLD);
+            if (style.isItalic()) out.append(net.minecraft.ChatFormatting.ITALIC);
+            if (style.isUnderlined()) out.append(net.minecraft.ChatFormatting.UNDERLINE);
+            if (style.isStrikethrough()) out.append(net.minecraft.ChatFormatting.STRIKETHROUGH);
+            if (style.isObfuscated()) out.append(net.minecraft.ChatFormatting.OBFUSCATED);
+
+            out.append(text);
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+
+        return out.toString();
     }
 }

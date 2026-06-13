@@ -2,11 +2,11 @@ package gg.itzkatze.thehypixelrecreationmod;
 
 import gg.itzkatze.thehypixelrecreationmod.commands.*;
 import gg.itzkatze.thehypixelrecreationmod.features.KeybindRegistry;
-import gg.itzkatze.thehypixelrecreationmod.features.region.RegionRenderer;
+import gg.itzkatze.thehypixelrecreationmod.features.SpraySchemaRecorder;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
+import gg.itzkatze.thehypixelrecreationmod.features.worldexport.ChunkExportRecorder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.hypixel.modapi.HypixelModAPI;
 import net.hypixel.modapi.fabric.event.HypixelModAPICallback;
 import net.hypixel.modapi.packet.impl.clientbound.event.ClientboundLocationPacket;
@@ -27,9 +27,13 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetArmorStandInfos.register();
 		GetScoreboardInfo.register();
 		ExportRegionsCommand.register();
+		ChunkExporterCommand.register();
 		ToggleRegionCommand.register();
 		AutoFillCommand.register();
 		CopyMapTextureCommand.register();
+		CopyBiomeData.register();
+		FetchBlockDisplaysCommand.register();
+		SpraySchemaRecorderCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();
@@ -39,12 +43,8 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 			if (RegionTracker.isEnabled()) {
 				RegionTracker.update();
 			}
-		});
-
-		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
-			if (RegionRenderer.isRenderEnabled()) {
-				RegionRenderer.render(context.matrices(), context.gameRenderer().getMainCamera(), 1.0f);
-			}
+			ChunkExportRecorder.tick();
+			SpraySchemaRecorder.tick();
 		});
 
 		HypixelModAPI.getInstance().subscribeToEventPacket(ClientboundLocationPacket.class);

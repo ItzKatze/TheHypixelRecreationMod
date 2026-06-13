@@ -2,8 +2,10 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.TextColor;
@@ -22,8 +24,8 @@ import java.util.List;
 public class GetArmorStandArmorColorsCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("getarmorstandcolors")
-                    .then(ClientCommandManager.argument("radius", DoubleArgumentType.doubleArg(0))
+            dispatcher.register(ClientCommands.literal("getarmorstandcolors")
+                    .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
                             .executes(context -> {
                                 double radius = DoubleArgumentType.getDouble(context, "radius");
                                 Minecraft client = Minecraft.getInstance();
@@ -79,8 +81,8 @@ public class GetArmorStandArmorColorsCommand {
 
                 Component colorMessage = Component.literal("Copy Color (click)").withStyle(style);
 
-                player.displayClientMessage(stack.getHoverName(), false);
-                player.displayClientMessage(colorMessage, false);
+                player.sendSystemMessage(stack.getHoverName());
+                player.sendSystemMessage(colorMessage);
             }
         }
 

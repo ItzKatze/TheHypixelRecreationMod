@@ -2,14 +2,15 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionRenderer;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.network.chat.Component;
 
 public class ToggleRegionCommand {
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("toggleregion")
+            dispatcher.register(ClientCommands.literal("toggleregion")
                     .executes(context -> {
                         RegionTracker.toggle();
                         RegionRenderer.setRenderEnabled(RegionTracker.isEnabled());
@@ -20,7 +21,7 @@ public class ToggleRegionCommand {
                         );
                         return 1;
                     })
-                    .then(ClientCommandManager.literal("tracking")
+                    .then(ClientCommands.literal("tracking")
                             .executes(context -> {
                                 RegionTracker.toggle();
                                 String status = RegionTracker.isEnabled() ? "§aENABLED" : "§cDISABLED";
@@ -30,7 +31,7 @@ public class ToggleRegionCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("rendering")
+                    .then(ClientCommands.literal("rendering")
                             .executes(context -> {
                                 RegionRenderer.toggleRender();
                                 String status = RegionRenderer.isRenderEnabled() ? "§aENABLED" : "§cDISABLED";
@@ -40,7 +41,7 @@ public class ToggleRegionCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                             .executes(context -> {
                                 boolean tracking = RegionTracker.isEnabled();
                                 boolean rendering = RegionRenderer.isRenderEnabled();
@@ -62,7 +63,7 @@ public class ToggleRegionCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("enable")
+                    .then(ClientCommands.literal("enable")
                             .executes(context -> {
                                 RegionTracker.setEnabled(true);
                                 RegionRenderer.setRenderEnabled(true);
@@ -72,7 +73,7 @@ public class ToggleRegionCommand {
                                 return 1;
                             })
                     )
-                    .then(ClientCommandManager.literal("disable")
+                    .then(ClientCommands.literal("disable")
                             .executes(context -> {
                                 RegionTracker.setEnabled(false);
                                 RegionRenderer.setRenderEnabled(false);

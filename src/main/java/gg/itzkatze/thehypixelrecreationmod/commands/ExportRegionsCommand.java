@@ -2,8 +2,9 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.features.region.RegionExporter;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -12,7 +13,7 @@ public class ExportRegionsCommand {
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("exportregions")
+            dispatcher.register(ClientCommands.literal("exportregions")
                     .executes(context -> {
                         try {
                             RegionExporter.exportWithTimestamp();
@@ -23,15 +24,15 @@ public class ExportRegionsCommand {
                             return 0;
                         }
                     })
-                    .then(ClientCommandManager.literal("summary")
+                    .then(ClientCommands.literal("summary")
                         .executes(context -> {
                             String summary = RegionExporter.getExportSummary();
                             context.getSource().sendFeedback(Component.literal("§e" + summary));
                             return -1;
                         })
                     )
-                    .then(ClientCommandManager.literal("to")
-                        .then(ClientCommandManager.argument("filename", StringArgumentType.string()))
+                    .then(ClientCommands.literal("to")
+                        .then(ClientCommands.argument("filename", StringArgumentType.string()))
                         .executes(context -> {
                             String filename = StringArgumentType.getString(context, "filename");
                             try {

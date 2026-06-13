@@ -10,10 +10,9 @@ public class ChatUtils {
     public static void sendLine() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
-        mc.player.displayClientMessage(
+        mc.player.sendSystemMessage(
                 Component.literal("------------------------------------")
-                        .withStyle(Style.EMPTY.withBold(true).withColor(TextColor.fromRgb(0xFFD700))),
-                false
+                        .withStyle(Style.EMPTY.withBold(true).withColor(TextColor.fromRgb(0xFFD700)))
         );
     }
 
@@ -21,17 +20,16 @@ public class ChatUtils {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        mc.player.displayClientMessage(Component.literal(message), false);
+        mc.player.sendSystemMessage(Component.literal(message));
     }
 
     public static void log(String message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        mc.player.displayClientMessage(
+        mc.player.sendSystemMessage(
                 Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x808080))),
-                false
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x808080)))
         );
     }
 
@@ -39,10 +37,9 @@ public class ChatUtils {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        mc.player.displayClientMessage(
+        mc.player.sendSystemMessage(
                 Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000))),
-                false
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)))
         );
     }
 
@@ -50,10 +47,9 @@ public class ChatUtils {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        mc.player.displayClientMessage(
+        mc.player.sendSystemMessage(
                 Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFF00))),
-                false
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFF00)))
         );
     }
 }

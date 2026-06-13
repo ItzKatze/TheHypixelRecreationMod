@@ -42,6 +42,6 @@ public class CopyLoreFromItem {
                         ))
                 );
 
-        client.player.displayClientMessage(message, false);
+        client.player.sendSystemMessage(message);
     }
 }

@@ -15,19 +15,7 @@ public class GetPlayerHeadSkin {
 
         ItemStack hoveredStack = GUIUtils.getHoveredItem(client);
         String textureID = ItemStackUtils.getPlayerHeadTexture(hoveredStack);
-
-        if (textureID.isEmpty()) {
-            Component errorMessage = Component.literal("No texture found on hovered item!")
-                    .withStyle(ChatFormatting.RED);
-            client.player.displayClientMessage(errorMessage, false);
-            return;
-        }
-
-        // Copy to clipboard
-        client.keyboardHandler.setClipboard(textureID);
-
-        // Create main message
-        Component mainMessage = Component.literal("✓ Copied Texture-ID: ")
+        Component M = Component.literal("✓ Copied Texture-ID: ")
                 .withStyle(ChatFormatting.GREEN)
                 .append(Component.literal(textureID)
                         .withStyle(style -> style
@@ -36,12 +24,43 @@ public class GetPlayerHeadSkin {
                                 .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy again")))
                         )
                 );
+        client.player.sendSystemMessage(M);
+        var prop = ItemStackUtils.getPlayerHeadTextureProperty(hoveredStack);
+        if (prop == null) {
+            Component errorMessage = Component.literal("No texture found on hovered item!")
+                    .withStyle(ChatFormatting.RED);
+            client.player.sendSystemMessage(errorMessage);
+            return;
+        }
 
-        client.player.displayClientMessage(mainMessage, false);
+        // Build the payload the user can directly copy/paste.
+        // Includes signature if present.
+        String payload = ItemStackUtils.buildTexturesPropertiesJson(prop, true);
 
-        // Optional: Show a smaller hint
-        Component hint = Component.literal("(Texture ID has been copied to clipboard)")
-                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
-        client.player.displayClientMessage(hint, false);
+        // Copy to clipboard
+        client.keyboardHandler.setClipboard(payload);
+
+        // Create main message
+        Component mainMessage = Component.literal("✓ Copied head textures JSON: ")
+                .withStyle(ChatFormatting.GREEN)
+                .append(Component.literal("[click to copy]")
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent.CopyToClipboard(payload))
+                                .withColor(ChatFormatting.AQUA)
+                                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy again")))
+                        )
+                );
+
+        client.player.sendSystemMessage(mainMessage);
+
+        // Also print the actual JSON in chat (may be long, but that's what you asked for)
+        client.player.sendSystemMessage(
+                Component.literal(payload)
+                        .withStyle(style -> style
+                                .withClickEvent(new ClickEvent.CopyToClipboard(payload))
+                                .withColor(ChatFormatting.GRAY)
+                                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy")))
+                        )
+        );
     }
 }

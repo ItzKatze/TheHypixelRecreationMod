@@ -14,7 +14,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CopyCurrentGui {
 
@@ -35,13 +37,7 @@ public class CopyCurrentGui {
         StringBuilder code = new StringBuilder();
         String className = "GUI" + toPascalCase(cleanTitle);
 
-        code.append("public class ").append(className).append(" extends HypixelInventoryGUI {\n\n");
-        code.append("    public ").append(className).append("() {\n");
-        code.append("        super(\"").append(escapeJavaString(guiTitle)).append("\", InventoryType.").append(inventoryType).append(");\n");
-        code.append("    }\n\n");
-        code.append("    @Override\n");
-        code.append("    public void onOpen(InventoryGUIOpenEvent e) {\n");
-
+        List<Integer> fillerSlots = new ArrayList<>();
         Integer closeItemSlot = null;
         List<String> itemEntries = new ArrayList<>();
 
@@ -52,6 +48,7 @@ public class CopyCurrentGui {
             int slotIndex = slot.index;
 
             if (stack.is(Items.BLACK_STAINED_GLASS)) {
+                fillerSlots.add(slotIndex);
                 continue;
             }
 
@@ -64,23 +61,37 @@ public class CopyCurrentGui {
             itemEntries.add(itemEntry);
         }
 
+        boolean isBorder = isBorderPattern(fillerSlots, containerSlots.size());
+
+        code.append("public class ").append(className).append(" extends StatelessView {\n\n");
+        code.append("    @Override\n");
+        code.append("    public ViewConfiguration<DefaultState> configuration() {\n");
+        code.append("        return new ViewConfiguration<>(\"").append(escapeJavaString(guiTitle)).append("\", InventoryType.").append(inventoryType).append(");\n");
+        code.append("    }\n\n");
+        code.append("    @Override\n");
+        code.append("    public void layout(ViewLayout<DefaultState> layout, DefaultState state, ViewContext ctx) {\n");
+
+        if (!fillerSlots.isEmpty()) {
+            if (isBorder) {
+                int lastSlot = containerSlots.size() - 1;
+                code.append("        layout.filler(Layouts.border(0, ").append(lastSlot).append("), Components.FILLER);\n");
+            } else {
+                code.append("        Components.fill(layout);\n");
+            }
+        }
+
+        if (closeItemSlot != null) {
+            code.append("        Components.close(layout, ").append(closeItemSlot).append(");\n");
+        }
+
+        if (!fillerSlots.isEmpty() || closeItemSlot != null) {
+            code.append("\n");
+        }
+
         for (String entry : itemEntries) {
             code.append(entry);
         }
 
-        if (closeItemSlot != null) {
-            code.append("        set(GUIClickableItem.getCloseItem(").append(closeItemSlot).append("));\n");
-        }
-
-        code.append("        updateItemStacks(getInventory(), getPlayer());\n");
-        code.append("    }\n\n");
-        code.append("    @Override\n");
-        code.append("    public boolean allowHotkeying() {\n");
-        code.append("        return false;\n");
-        code.append("    }\n\n");
-        code.append("    @Override\n");
-        code.append("    public void onBottomClick(InventoryPreClickEvent e) {\n");
-        code.append("        e.setCancelled(true);\n");
         code.append("    }\n");
         code.append("}\n");
 
@@ -96,7 +107,7 @@ public class CopyCurrentGui {
                         ))
                 );
 
-        client.player.displayClientMessage(message, false);
+        client.player.sendSystemMessage(message);
     }
 
     private static List<Slot> getContainerSlots(AbstractContainerScreen<?> screen) {
@@ -142,33 +153,49 @@ public class CopyCurrentGui {
         boolean isPlayerHead = stack.is(Items.PLAYER_HEAD);
         String texture = isPlayerHead ? ItemStackUtils.getPlayerHeadTexture(stack) : "";
 
-        sb.append("        set(new GUIItem(").append(slotIndex).append(") {\n");
-        sb.append("            @Override\n");
-        sb.append("            public ItemStack.Builder getItem(HypixelPlayer player) {\n");
-
         if (isPlayerHead && !texture.isEmpty()) {
-            sb.append("                return ItemStackCreator.getStackHead(\n");
-            sb.append("                        \"").append(escapeJavaString(displayName)).append("\",\n");
-            sb.append("                        \"").append(escapeJavaString(texture)).append("\",\n");
-            sb.append("                        ").append(count);
+            sb.append("        layout.slot(").append(slotIndex).append(", ItemStackCreator.getStackHead(\n");
+            sb.append("                \"").append(escapeJavaString(displayName)).append("\",\n");
+            sb.append("                \"").append(escapeJavaString(texture)).append("\",\n");
+            sb.append("                ").append(count);
         } else {
-            sb.append("                return ItemStackCreator.getStack(\n");
-            sb.append("                        \"").append(escapeJavaString(displayName)).append("\",\n");
-            sb.append("                        Material.").append(material).append(",\n");
-            sb.append("                        ").append(count);
+            sb.append("        layout.slot(").append(slotIndex).append(", ItemStackCreator.getStack(\n");
+            sb.append("                \"").append(escapeJavaString(displayName)).append("\",\n");
+            sb.append("                Material.").append(material).append(",\n");
+            sb.append("                ").append(count);
         }
 
         if (!lore.isEmpty()) {
             for (String loreLine : lore) {
-                sb.append(",\n                        \"").append(escapeJavaString(loreLine)).append("\"");
+                sb.append(",\n                \"").append(escapeJavaString(loreLine)).append("\"");
             }
         }
 
-        sb.append("\n                );\n");
-        sb.append("            }\n");
-        sb.append("        });\n");
+        sb.append("\n        ));\n");
 
         return sb.toString();
+    }
+
+    private static boolean isBorderPattern(List<Integer> fillerSlots, int totalSlots) {
+        if (fillerSlots.isEmpty()) return false;
+
+        int rows = totalSlots / 9;
+        Set<Integer> borderPositions = new HashSet<>();
+        for (int i = 0; i < totalSlots; i++) {
+            int row = i / 9;
+            int col = i % 9;
+            if (row == 0 || row == rows - 1 || col == 0 || col == 8) {
+                borderPositions.add(i);
+            }
+        }
+
+        for (int slot : fillerSlots) {
+            if (!borderPositions.contains(slot)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static String escapeJavaString(String s) {

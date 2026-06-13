@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version "${loom_version}"
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 }
 
@@ -23,7 +23,15 @@ repositories {
 		}
 	}
 	maven {
+		url "https://repo.papermc.io/repository/maven-public/"
+	}
+	maven {
 		url "https://repo.hypixel.net/repository/Hypixel/"
+	}
+	maven {
+		name = 'sonatype-oss-snapshots1'
+		url = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+		mavenContent { snapshotsOnly() }
 	}
 	mavenLocal()
 }
@@ -37,18 +45,39 @@ configurations {
 
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings loom.officialMojangMappings()
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	include(modImplementation("org.joml:joml:1.10.7"))
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	include(implementation("org.joml:joml:1.10.7"))
 
-	modImplementation "net.hypixel:mod-api:${project.hypixel_mod_api}"
-	modImplementation "maven.modrinth:hypixel-mod-api:${project.hypixel_fabric_mod_api}"
+	shaded("net.kyori:adventure-text-serializer-legacy:4.26.1") {
+		transitive = false
+	}
+	shaded("net.kyori:adventure-api:4.26.1")
+	shaded("net.kyori:adventure-text-logger-slf4j:4.26.1") {
+		transitive = false
+	}
+	shaded("net.kyori:adventure-nbt:4.26.1") {
+		transitive = false
+	}
+
+	shaded("net.minestom:minestom:2026.06.02-26.1.2") {
+		transitive = true
+		exclude group: "net.kyori"
+	}
+	shaded("dev.hollowcube:polar:1.15.1") {
+		transitive = true
+		exclude group: "net.kyori"
+	}
+
+	implementation "net.hypixel:mod-api:${project.hypixel_mod_api}"
+	implementation "maven.modrinth:hypixel-mod-api:${project.hypixel_fabric_mod_api}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	implementation include('net.kyori:adventure-platform-fabric:6.9.0')
 
 	configurations.shaded.dependencies.each {
-		include it
+		//include it
 		implementation it
 	}
 }
@@ -67,19 +96,19 @@ jar {
 		configurations.shaded.collect {
 			it.isDirectory() ? it : zipTree(it).matching {
 				exclude 'META-INF/**'
+				exclude 'net/minestom/server/adventure/provider/**'
 			}
 		}
 	}
-
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
 	withSourcesJar()
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
