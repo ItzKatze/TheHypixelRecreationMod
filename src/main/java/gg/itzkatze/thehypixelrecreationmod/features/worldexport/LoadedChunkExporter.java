@@ -10,16 +10,19 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.chunk.UpgradeData;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.storage.RegionFile;
 import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 import net.minecraft.world.level.chunk.storage.SerializableChunkData;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 
 import java.io.DataOutputStream;
@@ -28,9 +31,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -111,13 +114,25 @@ public final class LoadedChunkExporter {
         List<SerializableChunkData.SectionData> sectionData = new ArrayList<>();
         LevelChunkSection[] sections = chunk.getSections();
         int minSectionY = SectionPos.blockToSectionCoord(chunk.getMinY());
-        for (int index = 0; index < sections.length; index++) {
-            LevelChunkSection section = sections[index];
-            if (section == null || section.hasOnlyAir()) {
-                continue;
-            }
+        int maxSectionY = minSectionY + sections.length - 1;
+        LevelLightEngine lightEngine = level.getLightEngine();
+        int minSerializedSectionY = Math.min(minSectionY, lightEngine.getMinLightSection());
+        int maxSerializedSectionY = Math.max(maxSectionY, lightEngine.getMaxLightSection() - 1);
+        for (int sectionY = minSerializedSectionY; sectionY <= maxSerializedSectionY; sectionY++) {
+            int index = sectionY - minSectionY;
+            LevelChunkSection section = index >= 0 && index < sections.length ? sections[index] : null;
+            SectionPos sectionPos = SectionPos.of(pos, sectionY);
+            DataLayer blockLight = copyLightData(lightEngine, LightLayer.BLOCK, sectionPos);
+            DataLayer skyLight = copyLightData(lightEngine, LightLayer.SKY, sectionPos);
 
-            sectionData.add(new SerializableChunkData.SectionData(minSectionY + index, section.copy(), null, null));
+            if (section != null || blockLight != null || skyLight != null) {
+                sectionData.add(new SerializableChunkData.SectionData(
+                    sectionY,
+                    section == null ? null : section.copy(),
+                    blockLight,
+                    skyLight
+                ));
+            }
         }
 
         List<CompoundTag> blockEntityTags = new ArrayList<>();
@@ -134,12 +149,12 @@ public final class LoadedChunkExporter {
             chunk.getPersistedStatus(),
             null,
             chunk.getBelowZeroRetrogen(),
-            UpgradeData.EMPTY,
+            chunk.getUpgradeData(),
             null,
-            Map.of(),
+            copyHeightmaps(chunk),
             chunk.getTicksForSerialization(0L),
             copyPostProcessing(chunk.getPostProcessing()),
-            false,
+            chunk.isLightCorrect(),
             sectionData,
             List.of(),
             blockEntityTags,
@@ -147,6 +162,19 @@ public final class LoadedChunkExporter {
         );
 
         return serializableChunkData.write();
+    }
+
+    private static DataLayer copyLightData(LevelLightEngine lightEngine, LightLayer layer, SectionPos sectionPos) {
+        DataLayer data = lightEngine.getLayerListener(layer).getDataLayerData(sectionPos);
+        return data == null ? null : data.copy();
+    }
+
+    private static Map<Heightmap.Types, long[]> copyHeightmaps(ChunkAccess chunk) {
+        Map<Heightmap.Types, long[]> heightmaps = new EnumMap<>(Heightmap.Types.class);
+        for (Map.Entry<Heightmap.Types, Heightmap> entry : chunk.getHeightmaps()) {
+            heightmaps.put(entry.getKey(), entry.getValue().getRawData().clone());
+        }
+        return heightmaps;
     }
 
     private static List<LevelChunk> collectLoadedChunks(Minecraft client, ClientLevel level, ClientChunkCache chunkCache) {
