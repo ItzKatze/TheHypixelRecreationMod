@@ -34,6 +34,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		CopyBiomeData.register();
 		FetchBlockDisplaysCommand.register();
 		SpraySchemaRecorderCommand.register();
+		SoundNbsRecorderCommand.register();
 
 		// Keybinds
 		new KeybindRegistry().onInitializeClient();

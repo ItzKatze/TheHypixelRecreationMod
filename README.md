@@ -9,5 +9,6 @@ Current Minecraft Version: 1.21.11
 - `/getArmorStandInfos <radius>` Gets the position information of armor stands in the defined radius. (wip)
 - `/getScoreboardInfo` Prints out the scoreboard information in chat.
 - `/copymaptexture [all]` Copy's the texture of a map to the clipboard.
+- `/nbsrecord start`, `/nbsrecord stop <name>`, `/nbsrecord status` records inbound server sounds to `nbs-recordings/<name>.nbs` and exports custom instrument sounds.
 - `Keybind K` Copies the texture ID of the hovered player head into the clipboard.
 - `Keybind L` Copies the lore of the hovered item.
