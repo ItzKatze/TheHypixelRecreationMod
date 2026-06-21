@@ -3,7 +3,6 @@ package gg.itzkatze.thehypixelrecreationmod;
 import gg.itzkatze.thehypixelrecreationmod.commands.*;
 import gg.itzkatze.thehypixelrecreationmod.features.KeybindRegistry;
 import gg.itzkatze.thehypixelrecreationmod.features.SpraySchemaRecorder;
-import gg.itzkatze.thehypixelrecreationmod.features.region.RegionTracker;
 import gg.itzkatze.thehypixelrecreationmod.features.worldexport.ChunkExportRecorder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -26,10 +25,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		GetArmorStandArmorColorsCommand.register();
 		GetArmorStandInfos.register();
 		GetScoreboardInfo.register();
-		ExportRegionsCommand.register();
 		ChunkExporterCommand.register();
-		ToggleRegionCommand.register();
-		AutoFillCommand.register();
 		CopyMapTextureCommand.register();
 		CopyBiomeData.register();
 		FetchBlockDisplaysCommand.register();
@@ -40,10 +36,7 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		new KeybindRegistry().onInitializeClient();
 
 		// Region tracking system
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			if (RegionTracker.isEnabled()) {
-				RegionTracker.update();
-			}
+		ClientTickEvents.END_CLIENT_TICK.register(_ -> {
 			ChunkExportRecorder.tick();
 			SpraySchemaRecorder.tick();
 		});
