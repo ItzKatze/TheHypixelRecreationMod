@@ -2,14 +2,12 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
@@ -33,9 +31,9 @@ public class GetArmorStandArmorColorsCommand {
                                 if (player == null || client.level == null) return 1;
 
                                 List<ArmorStand> armorStands = client.level.getEntities(
-                                        EntityType.ARMOR_STAND,
+                                        EntityTypes.ARMOR_STAND,
                                         player.getBoundingBox().inflate(radius),
-                                        armorStandEntity -> true
+                                        _ -> true
                                 );
 
                                 if (armorStands.isEmpty()) {

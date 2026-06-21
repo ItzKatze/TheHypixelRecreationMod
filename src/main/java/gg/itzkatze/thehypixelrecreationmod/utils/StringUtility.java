@@ -15,42 +15,31 @@ public class StringUtility {
      * Works for vanilla ChatFormatting colors and formatting.
      */
     public static String toLegacyString(Component component) {
-        StringBuilder legacy = new StringBuilder();
-        final ChatFormatting[] lastColor = new ChatFormatting[1];
+        StringBuilder out = new StringBuilder();
 
-        component.visit((style, content) -> {
-            if (!content.startsWith("§")) {
-                ChatFormatting color = null;
+        component.visit((style, text) -> {
+            var color = style.getColor();
 
-                TextColor textColor = style.getColor();
-                if (textColor != null) {
-                    // Only map if it's a legacy color
-                    for (ChatFormatting cf : ChatFormatting.values()) {
-                        if (!cf.isFormat() && cf.getColor() != null && cf.getColor() == textColor.getValue()) {
-                            color = cf;
-                            break;
-                        }
+            if (color != null) {
+                for (ChatFormatting formatting : ChatFormatting.values()) {
+                    if (color.equals(TextColor.fromLegacyFormat(formatting))) {
+                        out.append(formatting);
+                        break;
                     }
                 }
-
-                if (color != null && color != lastColor[0]) {
-                    legacy.append('§').append(color.getChar());
-                    lastColor[0] = color;
-                }
-
-                if (style.isBold()) legacy.append('§').append(ChatFormatting.BOLD.getChar());
-                if (style.isItalic()) legacy.append('§').append(ChatFormatting.ITALIC.getChar());
-                if (style.isUnderlined()) legacy.append('§').append(ChatFormatting.UNDERLINE.getChar());
-                if (style.isStrikethrough()) legacy.append('§').append(ChatFormatting.STRIKETHROUGH.getChar());
-                if (style.isObfuscated()) legacy.append('§').append(ChatFormatting.OBFUSCATED.getChar());
-
-                legacy.append(content);
             }
 
+            if (style.isBold()) out.append(ChatFormatting.BOLD);
+            if (style.isItalic()) out.append(ChatFormatting.ITALIC);
+            if (style.isUnderlined()) out.append(ChatFormatting.UNDERLINE);
+            if (style.isStrikethrough()) out.append(ChatFormatting.STRIKETHROUGH);
+            if (style.isObfuscated()) out.append(ChatFormatting.OBFUSCATED);
+
+            out.append(text);
             return Optional.empty();
         }, Style.EMPTY);
 
-        return legacy.toString();
+        return out.toString();
     }
 
     public static String stripColor(String s) {

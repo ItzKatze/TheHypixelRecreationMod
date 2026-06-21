@@ -6,10 +6,13 @@ import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -19,11 +22,13 @@ import java.util.List;
 import java.util.Set;
 
 public class CopyCurrentGui {
+    private static final Item BLACK_STAINED_GLASS =
+            BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace("black_stained_glass"));
 
     public static void copyCurrentGui(Minecraft client) {
         if (client.player == null) return;
 
-        if (!(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             ChatUtils.warn("Not in a container GUI!");
             return;
         }
@@ -47,7 +52,7 @@ public class CopyCurrentGui {
 
             int slotIndex = slot.index;
 
-            if (stack.is(Items.BLACK_STAINED_GLASS)) {
+            if (stack.is(BLACK_STAINED_GLASS)) {
                 fillerSlots.add(slotIndex);
                 continue;
             }

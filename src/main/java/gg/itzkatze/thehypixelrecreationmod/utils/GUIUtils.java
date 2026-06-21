@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 public class GUIUtils {
 
     public static ItemStack getHoveredItem(Minecraft mc) {
-        if (!(mc.screen instanceof AbstractContainerScreen<?> screen)) return ItemStack.EMPTY;
+        if (!(mc.gui.screen() instanceof AbstractContainerScreen<?> screen)) return ItemStack.EMPTY;
 
         Slot slot = ((HandledScreenAccessor) screen).getHoveredSlot();
         return (slot != null && slot.hasItem()) ? slot.getItem() : ItemStack.EMPTY;

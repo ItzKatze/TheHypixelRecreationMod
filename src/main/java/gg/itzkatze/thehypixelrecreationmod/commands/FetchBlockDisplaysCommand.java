@@ -3,7 +3,6 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.math.Transformation;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
@@ -17,9 +16,9 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Display.BlockDisplay;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaternionfc;
@@ -86,17 +85,17 @@ public final class FetchBlockDisplaysCommand {
 
         final var searchBox = player.getBoundingBox().inflate(area);
         final var blockDisplays = client.level.getEntities(
-            EntityType.BLOCK_DISPLAY,
+            EntityTypes.BLOCK_DISPLAY,
             searchBox,
-            entity -> true
+            _ -> true
         );
         final var itemDisplays = client.level.getEntities(
-            EntityType.ITEM_DISPLAY,
+            EntityTypes.ITEM_DISPLAY,
             searchBox,
-            entity -> true
+            _ -> true
         );
         final var modelArmorStands = client.level.getEntities(
-            EntityType.ARMOR_STAND,
+            EntityTypes.ARMOR_STAND,
             searchBox,
             FetchBlockDisplaysCommand::isExportableModelArmorStand
         );
