@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.ChatFormatting;
@@ -15,7 +16,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -46,7 +47,7 @@ public class PlayerSkinCommand {
                             List<Player> nearby = client.level.getEntitiesOfClass(
                                     Player.class,
                                     sender.getBoundingBox().inflate(radius),
-                                    ent -> ent.getType() == EntityType.PLAYER
+                                    ent -> ent.getType() == EntityTypes.PLAYER
                             );
 
                             if (nearby.isEmpty()) {
@@ -155,36 +156,12 @@ public class PlayerSkinCommand {
                 if ((e instanceof Display.TextDisplay || e instanceof ArmorStand)
                         && e.hasCustomName()) {
 
-                    String raw = toLegacyVanilla(e.getCustomName());
+                    String raw = StringUtility.toLegacyString(e.getCustomName());
                     if (!raw.isEmpty()) return raw;
                 }
             }
         }
 
         return "Unknown";
-    }
-
-    public static String toLegacyVanilla(Component component) {
-        StringBuilder out = new StringBuilder();
-
-        component.visit((style, text) -> {
-            var color = style.getColor();
-
-            if (color != null) {
-                var fmt = net.minecraft.ChatFormatting.getByName(color.serialize());
-                if (fmt != null) out.append(fmt); // emits §e, §6, etc.
-            }
-
-            if (style.isBold()) out.append(net.minecraft.ChatFormatting.BOLD);
-            if (style.isItalic()) out.append(net.minecraft.ChatFormatting.ITALIC);
-            if (style.isUnderlined()) out.append(net.minecraft.ChatFormatting.UNDERLINE);
-            if (style.isStrikethrough()) out.append(net.minecraft.ChatFormatting.STRIKETHROUGH);
-            if (style.isObfuscated()) out.append(net.minecraft.ChatFormatting.OBFUSCATED);
-
-            out.append(text);
-            return java.util.Optional.empty();
-        }, net.minecraft.network.chat.Style.EMPTY);
-
-        return out.toString();
     }
 }

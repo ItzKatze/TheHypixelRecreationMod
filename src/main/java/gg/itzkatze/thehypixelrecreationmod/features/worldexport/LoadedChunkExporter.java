@@ -205,7 +205,7 @@ public final class LoadedChunkExporter {
     }
 
     private static String describeSource(Minecraft client) {
-        if (client.isSingleplayer()) {
+        if (client.hasSingleplayerServer()) {
             return "singleplayer";
         }
 
