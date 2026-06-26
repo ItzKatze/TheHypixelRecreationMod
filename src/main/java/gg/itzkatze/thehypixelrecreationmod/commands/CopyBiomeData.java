@@ -1,68 +1,57 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
-import net.minecraft.client.KeyboardHandler;
-import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.biome.Biome;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
-
-public class CopyBiomeData {
+public final class CopyBiomeData {
+    private CopyBiomeData() {
+    }
 
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommands.literal("copybiomedata")
-                    .executes(context -> {
-                        // copy basic biome data for where the player currently is
-                        try {
-                            Minecraft minecraft = Minecraft.getInstance();
-                            if (minecraft == null || minecraft.player == null || minecraft.level == null) {
-                                context.getSource().sendFeedback(Component.literal("§cClient not ready or player/world missing."));
-                                return 1;
-                            }
-
-                            BlockPos pos = minecraft.player.blockPosition();
-                            var holder = minecraft.level.getBiome(pos);
-                            Biome biome = holder.value();
-
-                            // Build a safe summary without relying on mapping-specific methods or private fields
-                            StringBuilder sb = new StringBuilder();
-                            sb.append('{');
-                            sb.append("\n  \"holder\": \"").append(holder.toString()).append('\"');
-                            sb.append(',').append("\n  \"biomeToString\": \"").append(biome == null ? "null" : biome.toString()).append('\"');
-
-                            try {
-                                var effects = biome == null ? null : biome.getSpecialEffects();
-                                sb.append(',').append("\n  \"effects\": \"").append(effects == null ? "none" : effects.toString()).append('\"');
-                            } catch (Throwable ignored) {
-                                // Some mappings may have different method names; ignore and continue
-                            }
-
-                            sb.append('\n').append('}');
-
-                            // Copy to clipboard
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) ->
+                dispatcher.register(ClientCommands.literal("copybiomedata")
+                        .executes(context -> {
                             try {
                                 Minecraft client = Minecraft.getInstance();
-                                KeyboardHandler keyboard = client.keyboardHandler;
-                                keyboard.setClipboard(sb.toString());
-                                context.getSource().sendFeedback(Component.literal("§aBiome data copied to clipboard: " + holder.toString()));
-                                return 0;
-                            } catch (Exception e) {
-                                context.getSource().sendFeedback(Component.literal("§cFailed to copy to clipboard: " + e.getMessage()));
-                                return 1;
-                            }
+                                if (client.player == null || client.level == null) {
+                                    context.getSource().sendFeedback(Component.literal("§cClient not ready or player/world missing."));
+                                    return 0;
+                                }
 
-                        } catch (Exception e) {
-                            context.getSource().sendFeedback(Component.literal("§cFailed to copy biome data: " + e.getMessage()));
-                        }
-                        return 1;
-                    })
-            );
-        });
+                                BlockPos pos = client.player.blockPosition();
+                                var holder = client.level.getBiome(pos);
+                                String biomeData = buildBiomeData(holder.toString(), holder.value());
+
+                                ClipboardUtils.setClipboard(biomeData);
+                                context.getSource().sendFeedback(Component.literal("§aBiome data copied to clipboard: " + holder));
+                                return 1;
+                            } catch (Exception exception) {
+                                context.getSource().sendFeedback(Component.literal("§cFailed to copy biome data: " + exception.getMessage()));
+                                return 0;
+                            }
+                        }))
+        );
+    }
+
+    private static String buildBiomeData(String holder, Biome biome) {
+        StringBuilder output = new StringBuilder();
+        output.append('{');
+        output.append("\n  \"holder\": \"").append(StringUtility.escapeJson(holder)).append('\"');
+        output.append(",\n  \"biomeToString\": \"").append(StringUtility.escapeJson(String.valueOf(biome))).append('\"');
+
+        if (biome != null) {
+            output.append(",\n  \"effects\": \"")
+                    .append(StringUtility.escapeJson(String.valueOf(biome.getSpecialEffects())))
+                    .append('\"');
+        }
+
+        output.append('\n').append('}');
+        return output.toString();
     }
 }

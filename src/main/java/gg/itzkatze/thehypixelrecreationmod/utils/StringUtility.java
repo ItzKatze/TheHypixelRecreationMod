@@ -6,10 +6,14 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringUtility {
+public final class StringUtility {
+    private static final Pattern LEGACY_FORMATTING_PATTERN = Pattern.compile("(?i)[§&][0-9a-fk-orx]");
+
+    private StringUtility() {
+    }
+
     /**
      * Converts a Component (Text) into a legacy-formatted string with '§' codes
      * Works for vanilla ChatFormatting colors and formatting.
@@ -45,8 +49,19 @@ public class StringUtility {
     public static String stripColor(String s) {
         if (s == null) return "";
 
-        // Remove ALL Minecraft formatting codes (§ followed by 0-9, a-f, k-o, r, x)
-        return s.replaceAll("(?i)§[0-9a-fk-orx]", "")
-                .replaceAll("(?i)&[0-9a-fk-orx]", "");
+        return LEGACY_FORMATTING_PATTERN.matcher(s).replaceAll("");
+    }
+
+    public static String escapeJson(String value) {
+        if (value == null) return "";
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
+    }
+
+    public static String escapeJavaString(String value) {
+        return escapeJson(value).replace("\t", "\\t");
     }
 }

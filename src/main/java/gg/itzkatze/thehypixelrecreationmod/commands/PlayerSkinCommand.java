@@ -28,136 +28,148 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-public class PlayerSkinCommand {
-    private final static DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
-    private final static DecimalFormat df = new DecimalFormat("#.###", symbols);
+public final class PlayerSkinCommand {
+    private static final DecimalFormatSymbols DECIMAL_FORMAT_SYMBOLS = DecimalFormatSymbols.getInstance(Locale.US);
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.###", DECIMAL_FORMAT_SYMBOLS);
+
+    private PlayerSkinCommand() {
+    }
 
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(
-                    ClientCommands.literal("getskins")
-                            .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
-                                    .executes(context -> {
-                                        double radius = DoubleArgumentType.getDouble(context, "radius");
-                                        Minecraft client = Minecraft.getInstance();
-                                        Player sender = client.player;
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> dispatcher.register(
+                ClientCommands.literal("getskins")
+                        .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
+                                .executes(context -> execute(DoubleArgumentType.getDouble(context, "radius"))))
+        ));
+    }
 
-                            if (sender == null || client.level == null) return 1;
+    private static int execute(double radius) {
+        Minecraft client = Minecraft.getInstance();
+        Player sender = client.player;
+        if (sender == null || client.level == null) {
+            return 1;
+        }
 
-                            List<Player> nearby = client.level.getEntitiesOfClass(
-                                    Player.class,
-                                    sender.getBoundingBox().inflate(radius),
-                                    ent -> ent.getType() == EntityTypes.PLAYER
-                            );
+        List<Player> nearby = client.level.getEntitiesOfClass(
+                Player.class,
+                sender.getBoundingBox().inflate(radius),
+                entity -> entity.getType() == EntityTypes.PLAYER
+        );
 
-                            if (nearby.isEmpty()) {
-                                ChatUtils.warn("No players found nearby.");
-                                return 1;
+        if (nearby.isEmpty()) {
+            ChatUtils.warn("No players found nearby.");
+            return 1;
+        }
+
+        for (Player player : nearby) {
+            if (player.getName().getString().equals(sender.getName().getString())) {
+                continue;
+            }
+
+            sendSkinData(player);
+        }
+
+        return 1;
+    }
+
+    private static void sendSkinData(Player player) {
+        GameProfile profile = player.getGameProfile();
+        Collection<Property> properties = profile.properties().get("textures");
+
+        if (properties.isEmpty()) {
+            ChatUtils.send(Component.literal("No skin data for " + getOverheadName(player)));
+            return;
+        }
+
+        Property textureProperty = properties.iterator().next();
+        String texture = textureProperty.value();
+        String signature = textureProperty.signature();
+        String npcParameters = npcParameters(player, texture, signature);
+
+        Component textureMessage = copyMessage("Copy Texture (click)", texture, ChatFormatting.GREEN);
+        Component signatureMessage = copyMessage("Copy Signature (click)", signature == null ? "" : signature, ChatFormatting.AQUA);
+        Component npcParametersMessage = copyMessage("Copy premade NPCParameters (click)", npcParameters, ChatFormatting.YELLOW);
+
+        ChatUtils.send(Component.literal("Skin data for ").append(Component.literal(getOverheadName(player))));
+        ChatUtils.sendLine();
+        ChatUtils.send(textureMessage);
+        ChatUtils.sendLine();
+        ChatUtils.send(signatureMessage);
+        ChatUtils.sendLine();
+        ChatUtils.send(npcParametersMessage);
+        ChatUtils.sendLine();
+    }
+
+    private static Component copyMessage(String label, String clipboardValue, ChatFormatting color) {
+        return Component.literal(label)
+                .setStyle(Style.EMPTY
+                        .withClickEvent(new ClickEvent.CopyToClipboard(clipboardValue))
+                        .withColor(TextColor.fromLegacyFormat(color))
+                );
+    }
+
+    private static String npcParameters(Player player, String texture, String signature) {
+        String hologram = StringUtility.escapeJavaString(getOverheadName(player));
+        String safeSignature = StringUtility.escapeJavaString(signature == null ? "" : signature);
+        String safeTexture = StringUtility.escapeJavaString(texture == null ? "" : texture);
+
+        return """
+                super(new HumanConfiguration() {
+                            @Override
+                            public String[] holograms(HypixelPlayer player) {
+                                return new String[]{"%s", "§e§lCLICK"};
                             }
 
-                            for (Player player : nearby) {
-                                if (player.getName().getString().equals(sender.getName().getString())) continue;
+                            @Override
+                            public String signature(HypixelPlayer player) {
+                                return "%s";
+                            }
 
-                                GameProfile profile = player.getGameProfile();
-                                Collection<Property> props = profile.properties().get("textures");
+                            @Override
+                            public String texture(HypixelPlayer player) {
+                                return "%s";
+                            }
 
-                                            if (!props.isEmpty()) {
-                                                Property texProp = props.iterator().next();
-                                                String texture = texProp.value();
-                                                String signature = texProp.signature();
+                            @Override
+                            public Pos position(HypixelPlayer player) {
+                                return new Pos(%s, %s, %s, %s, %s);
+                            }
 
-                                                String hologram = getOverheadName(player).replace("\"", "\\\"");
-                                                String posX = df.format(player.getX());
-                                                String posY = df.format(player.getY());
-                                                String posZ = df.format(player.getZ());
-
-                                                int yaw = Math.round(player.getYRot());
-                                                int pitch = Math.round(player.getXRot());
-
-                                                String safeSignature = signature == null ? "" : signature.replace("\"", "\\\"");
-                                                String safeTexture = texture == null ? "" : texture.replace("\"", "\\\"");
-
-                                                String npcParams = "super(new HumanConfiguration() {\n" +
-                                                        "            @Override\n" +
-                                                        "            public String[] holograms(HypixelPlayer player) {\n" +
-                                                        "                return new String[]{\"" + hologram + "\", \"§e§lCLICK\"};\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public String signature(HypixelPlayer player) {\n" +
-                                                        "                return \"" + safeSignature + "\";\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public String texture(HypixelPlayer player) {\n" +
-                                                        "                return \"" + safeTexture + "\";\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public Pos position(HypixelPlayer player) {\n" +
-                                                        "                return new Pos(" + posX + ", " + posY + ", " + posZ + ", " + yaw + ", " + pitch + ");\n" +
-                                                        "            }\n\n" +
-                                                        "            @Override\n" +
-                                                        "            public boolean looking(HypixelPlayer player) {\n" +
-                                                        "                return true;\n" +
-                                                        "            }\n" +
-                                                        "        });";
-
-                                    Component textureMsg = Component.literal("Copy Texture (click)")
-                                            .setStyle(Style.EMPTY
-                                                    .withClickEvent(new ClickEvent.CopyToClipboard(texture))
-                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.GREEN))
-                                            );
-
-                                    Component sigMsg = Component.literal("Copy Signature (click)")
-                                            .setStyle(Style.EMPTY
-                                                    .withClickEvent(new ClickEvent.CopyToClipboard(signature))
-                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.AQUA))
-                                            );
-
-                                    Component npcParaMsg = Component.literal("Copy premade NPCParameters (click)")
-                                            .setStyle(Style.EMPTY
-                                                    .withClickEvent(new ClickEvent.CopyToClipboard(npcParams))
-                                                    .withColor(TextColor.fromLegacyFormat(ChatFormatting.YELLOW))
-                                            );
-
-                                                Component playerName = Component.literal(getOverheadName(player));
-                                                sender.sendSystemMessage(
-                                                        Component.literal("Skin data for ").append(playerName)
-                                                );
-                                                ChatUtils.sendLine();
-                                                sender.sendSystemMessage(textureMsg);
-                                                ChatUtils.sendLine();
-                                                sender.sendSystemMessage(sigMsg);
-                                                ChatUtils.sendLine();
-                                                sender.sendSystemMessage(npcParaMsg);
-                                                ChatUtils.sendLine();
-                                            } else {
-                                                sender.sendSystemMessage(
-                                                        Component.literal("No skin data for " + getOverheadName(player))
-                                                );
-                                            }
-                                        }
-
-                                        return 1;
-                                    })
-                            )
-            );
-        });
+                            @Override
+                            public boolean looking(HypixelPlayer player) {
+                                return true;
+                            }
+                        });""".formatted(
+                hologram,
+                safeSignature,
+                safeTexture,
+                DECIMAL_FORMAT.format(player.getX()),
+                DECIMAL_FORMAT.format(player.getY()),
+                DECIMAL_FORMAT.format(player.getZ()),
+                Math.round(player.getYRot()),
+                Math.round(player.getXRot())
+        );
     }
 
     private static String getOverheadName(Entity npc) {
         Level level = npc.level();
-        if (!(level instanceof ClientLevel clientLevel)) return "Unknown";
+        if (!(level instanceof ClientLevel clientLevel)) {
+            return "Unknown";
+        }
 
         AABB boxAbove = npc.getBoundingBox().inflate(0.5, 2.5, 0.5);
 
-        for (Entity e : clientLevel.entitiesForRendering()) {
-            if (e == npc) continue;
+        for (Entity entity : clientLevel.entitiesForRendering()) {
+            if (entity == npc) {
+                continue;
+            }
 
-            if (e.getBoundingBox().intersects(boxAbove)) {
-                if ((e instanceof Display.TextDisplay || e instanceof ArmorStand)
-                        && e.hasCustomName()) {
-
-                    String raw = StringUtility.toLegacyString(e.getCustomName());
-                    if (!raw.isEmpty()) return raw;
+            if (entity.getBoundingBox().intersects(boxAbove)
+                    && (entity instanceof Display.TextDisplay || entity instanceof ArmorStand)
+                    && entity.hasCustomName()) {
+                String raw = StringUtility.toLegacyString(entity.getCustomName());
+                if (!raw.isEmpty()) {
+                    return raw;
                 }
             }
         }

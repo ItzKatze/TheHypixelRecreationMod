@@ -1,7 +1,6 @@
 package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import gg.itzkatze.thehypixelrecreationmod.features.worldexport.ChunkExportRecorder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -47,6 +46,11 @@ public final class ChunkExporterCommand {
                                                                 + result.blockEntityCount()
                                                                 + " block entities to "
                                                                 + result.path().getFileName()
+                                                                + " and "
+                                                                + result.polarPath().getFileName()
+                                                                + " with "
+                                                                + result.customBiomeCount()
+                                                                + " custom biome definitions"
                                                 ));
                                                 return 1;
                                             } catch (Exception exception) {

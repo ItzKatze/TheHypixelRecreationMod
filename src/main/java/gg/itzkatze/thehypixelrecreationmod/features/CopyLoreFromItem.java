@@ -1,21 +1,26 @@
 package gg.itzkatze.thehypixelrecreationmod.features;
 
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.GUIUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.KeyboardHandler;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
-public class CopyLoreFromItem {
+public final class CopyLoreFromItem {
+    private CopyLoreFromItem() {
+    }
+
     public static void copyLore(Minecraft client) {
-        if (client.player == null) return;
+        if (client.player == null) {
+            return;
+        }
 
         ItemStack stack = GUIUtils.getHoveredItem(client);
         List<String> lore = ItemStackUtils.getLoreAsStrings(stack);
@@ -26,9 +31,7 @@ public class CopyLoreFromItem {
         }
 
         String loreText = String.join("\n", lore);
-
-        KeyboardHandler keyboard = client.keyboardHandler;
-        keyboard.setClipboard(loreText);
+        ClipboardUtils.setClipboard(loreText);
 
         Component message = Component.literal("✓ Copied Lore")
                 .withStyle(style -> style
@@ -42,6 +45,6 @@ public class CopyLoreFromItem {
                         ))
                 );
 
-        client.player.sendSystemMessage(message);
+        ChatUtils.send(message);
     }
 }

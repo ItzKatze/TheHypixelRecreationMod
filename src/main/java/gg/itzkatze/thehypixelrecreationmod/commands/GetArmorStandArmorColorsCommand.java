@@ -19,9 +19,12 @@ import net.minecraft.world.item.component.DyedItemColor;
 
 import java.util.List;
 
-public class GetArmorStandArmorColorsCommand {
+public final class GetArmorStandArmorColorsCommand {
+    private GetArmorStandArmorColorsCommand() {
+    }
+
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> {
             dispatcher.register(ClientCommands.literal("getarmorstandcolors")
                     .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
                             .executes(context -> {
@@ -42,7 +45,7 @@ public class GetArmorStandArmorColorsCommand {
                                 }
 
                                 for (ArmorStand armorStand : armorStands) {
-                                    processArmorStand(client, armorStand);
+                                    processArmorStand(armorStand);
                                 }
 
                                 return 1;
@@ -52,7 +55,7 @@ public class GetArmorStandArmorColorsCommand {
         });
     }
 
-    private static void processArmorStand(Minecraft client, ArmorStand armorStand) {
+    private static void processArmorStand(ArmorStand armorStand) {
         ItemStack[] slots = new ItemStack[] {
                 armorStand.getItemBySlot(EquipmentSlot.HEAD),
                 armorStand.getItemBySlot(EquipmentSlot.CHEST),
@@ -62,7 +65,6 @@ public class GetArmorStandArmorColorsCommand {
 
         ChatUtils.sendLine();
 
-        Player player = client.player;
         for (ItemStack stack : slots) {
             if (stack.isEmpty()) continue;
 
@@ -79,8 +81,8 @@ public class GetArmorStandArmorColorsCommand {
 
                 Component colorMessage = Component.literal("Copy Color (click)").withStyle(style);
 
-                player.sendSystemMessage(stack.getHoverName());
-                player.sendSystemMessage(colorMessage);
+                ChatUtils.send(stack.getHoverName());
+                ChatUtils.send(colorMessage);
             }
         }
 

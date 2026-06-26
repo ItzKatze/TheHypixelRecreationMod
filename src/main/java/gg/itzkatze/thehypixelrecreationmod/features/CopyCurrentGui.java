@@ -1,6 +1,7 @@
 package gg.itzkatze.thehypixelrecreationmod.features;
 
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.minecraft.ChatFormatting;
@@ -21,12 +22,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CopyCurrentGui {
+public final class CopyCurrentGui {
     private static final Item BLACK_STAINED_GLASS =
             BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace("black_stained_glass"));
 
+    private CopyCurrentGui() {
+    }
+
     public static void copyCurrentGui(Minecraft client) {
-        if (client.player == null) return;
+        if (client.player == null) {
+            return;
+        }
 
         if (!(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             ChatUtils.warn("Not in a container GUI!");
@@ -71,7 +77,7 @@ public class CopyCurrentGui {
         code.append("public class ").append(className).append(" extends StatelessView {\n\n");
         code.append("    @Override\n");
         code.append("    public ViewConfiguration<DefaultState> configuration() {\n");
-        code.append("        return new ViewConfiguration<>(\"").append(escapeJavaString(guiTitle)).append("\", InventoryType.").append(inventoryType).append(");\n");
+        code.append("        return new ViewConfiguration<>(\"").append(StringUtility.escapeJavaString(guiTitle)).append("\", InventoryType.").append(inventoryType).append(");\n");
         code.append("    }\n\n");
         code.append("    @Override\n");
         code.append("    public void layout(ViewLayout<DefaultState> layout, DefaultState state, ViewContext ctx) {\n");
@@ -101,7 +107,7 @@ public class CopyCurrentGui {
         code.append("}\n");
 
         String generatedCode = code.toString();
-        client.keyboardHandler.setClipboard(generatedCode);
+        ClipboardUtils.setClipboard(generatedCode);
 
         Component message = Component.literal("Copied GUI Code for: " + cleanTitle)
                 .withStyle(style -> style
@@ -112,7 +118,7 @@ public class CopyCurrentGui {
                         ))
                 );
 
-        client.player.sendSystemMessage(message);
+        ChatUtils.send(message);
     }
 
     private static List<Slot> getContainerSlots(AbstractContainerScreen<?> screen) {
@@ -123,7 +129,9 @@ public class CopyCurrentGui {
         int playerInventorySize = 36; // 27 main + 9 hotbar
 
         int containerSize = totalSlots - playerInventorySize;
-        if (containerSize < 0) containerSize = totalSlots;
+        if (containerSize < 0) {
+            containerSize = totalSlots;
+        }
 
         for (int i = 0; i < containerSize && i < menu.slots.size(); i++) {
             containerSlots.add(menu.slots.get(i));
@@ -160,19 +168,19 @@ public class CopyCurrentGui {
 
         if (isPlayerHead && !texture.isEmpty()) {
             sb.append("        layout.slot(").append(slotIndex).append(", ItemStackCreator.getStackHead(\n");
-            sb.append("                \"").append(escapeJavaString(displayName)).append("\",\n");
-            sb.append("                \"").append(escapeJavaString(texture)).append("\",\n");
+            sb.append("                \"").append(StringUtility.escapeJavaString(displayName)).append("\",\n");
+            sb.append("                \"").append(StringUtility.escapeJavaString(texture)).append("\",\n");
             sb.append("                ").append(count);
         } else {
             sb.append("        layout.slot(").append(slotIndex).append(", ItemStackCreator.getStack(\n");
-            sb.append("                \"").append(escapeJavaString(displayName)).append("\",\n");
+            sb.append("                \"").append(StringUtility.escapeJavaString(displayName)).append("\",\n");
             sb.append("                Material.").append(material).append(",\n");
             sb.append("                ").append(count);
         }
 
         if (!lore.isEmpty()) {
             for (String loreLine : lore) {
-                sb.append(",\n                \"").append(escapeJavaString(loreLine)).append("\"");
+                sb.append(",\n                \"").append(StringUtility.escapeJavaString(loreLine)).append("\"");
             }
         }
 
@@ -201,15 +209,6 @@ public class CopyCurrentGui {
         }
 
         return true;
-    }
-
-    private static String escapeJavaString(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
     }
 
     private static String toPascalCase(String s) {
