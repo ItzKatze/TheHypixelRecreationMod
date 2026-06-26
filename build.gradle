@@ -63,7 +63,7 @@ dependencies {
 		transitive = true
 		exclude group: "net.kyori"
 	}
-	shaded("dev.hollowcube:polar:1.15.1") {
+	shaded("dev.hollowcube:polar:1.16.0") {
 		transitive = true
 		exclude group: "net.kyori"
 	}

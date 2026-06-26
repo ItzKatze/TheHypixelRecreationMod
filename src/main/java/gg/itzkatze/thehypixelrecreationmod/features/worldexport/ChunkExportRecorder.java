@@ -1,5 +1,6 @@
 package gg.itzkatze.thehypixelrecreationmod.features.worldexport;
 
+import gg.itzkatze.thehypixelrecreationmod.utils.PolarConvert;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.nbt.CompoundTag;
@@ -53,15 +54,23 @@ public final class ChunkExportRecorder {
                 Instant.now(),
                 RECORDED_CHUNKS
         );
+        PolarConvert.ConversionResult polarResult = PolarConvert.convertWorldFolderToPolar(
+                exportResult.path(),
+                exportResult.path().resolveSibling(exportResult.path().getFileName() + ".polar"),
+                client.level,
+                RECORDED_CHUNKS
+        );
 
         String sanitizedName = LoadedChunkExporter.sanitizeSessionName(sessionName);
         clearSession();
         return new StopResult(
                 sanitizedName,
                 exportResult.path(),
+                polarResult.path(),
                 exportResult.chunkCount(),
                 exportResult.sectionCount(),
-                exportResult.blockEntityCount()
+                exportResult.blockEntityCount(),
+                polarResult.customBiomeCount()
         );
     }
 
@@ -123,7 +132,15 @@ public final class ChunkExportRecorder {
     public record StartResult(String dimension, int initialChunkCount) {
     }
 
-    public record StopResult(String sessionName, Path path, int chunkCount, int sectionCount, int blockEntityCount) {
+    public record StopResult(
+            String sessionName,
+            Path path,
+            Path polarPath,
+            int chunkCount,
+            int sectionCount,
+            int blockEntityCount,
+            int customBiomeCount
+    ) {
     }
 
     public record Status(String dimension, int chunkCount) {

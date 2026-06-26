@@ -46,6 +46,11 @@ public final class ChunkExporterCommand {
                                                                 + result.blockEntityCount()
                                                                 + " block entities to "
                                                                 + result.path().getFileName()
+                                                                + " and "
+                                                                + result.polarPath().getFileName()
+                                                                + " with "
+                                                                + result.customBiomeCount()
+                                                                + " custom biome definitions"
                                                 ));
                                                 return 1;
                                             } catch (Exception exception) {
