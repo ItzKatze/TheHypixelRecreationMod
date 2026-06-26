@@ -2,7 +2,6 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
@@ -18,10 +17,12 @@ import net.minecraft.world.scores.Scoreboard;
 import java.util.Comparator;
 import java.util.List;
 
-public class GetScoreboardInfo {
+public final class GetScoreboardInfo {
+    private GetScoreboardInfo() {
+    }
 
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> {
             dispatcher.register(
                     ClientCommands.literal("getscoreboardinfo")
                             .executes(ctx -> {
@@ -50,33 +51,27 @@ public class GetScoreboardInfo {
 
                                 ChatUtils.sendLine();
 
-                                client.player.sendSystemMessage(
-                                        Component.empty()
-                                                .append(objective.getDisplayName())
-                                                .withStyle(
-                                                        Style.EMPTY.withClickEvent(
-                                                                new ClickEvent.CopyToClipboard(
-                                                                        StringUtility.toLegacyString(
-                                                                                objective.getDisplayName()
-                                                                        )
-                                                                )
+                                ChatUtils.send(Component.empty()
+                                        .append(objective.getDisplayName())
+                                        .withStyle(
+                                                Style.EMPTY.withClickEvent(
+                                                        new ClickEvent.CopyToClipboard(
+                                                                StringUtility.toLegacyString(objective.getDisplayName())
                                                         )
                                                 )
-                                );
+                                        ));
 
                                 for (PlayerScoreEntry entry : entries) {
                                     Component line = renderEntry(scoreboard, entry);
                                     String legacy = StringUtility.toLegacyString(line);
 
-                                    client.player.sendSystemMessage(
-                                            Component.empty()
-                                                    .append(line)
-                                                    .withStyle(
-                                                            Style.EMPTY.withClickEvent(
-                                                                    new ClickEvent.CopyToClipboard(legacy)
-                                                            )
+                                    ChatUtils.send(Component.empty()
+                                            .append(line)
+                                            .withStyle(
+                                                    Style.EMPTY.withClickEvent(
+                                                            new ClickEvent.CopyToClipboard(legacy)
                                                     )
-                                    );
+                                            ));
                                 }
 
                                 ChatUtils.sendLine();

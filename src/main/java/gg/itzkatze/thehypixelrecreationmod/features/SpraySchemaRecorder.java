@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
 
-public class SpraySchemaRecorder {
+public final class SpraySchemaRecorder {
     private static final int PREVIEW_CAPTURE_TICKS = 200;
     private static final int PREVIEW_CAPTURE_DELAY_TICKS = 20;
     private static final double ITEM_FRAME_SEARCH_RADIUS = 32.0;
@@ -37,6 +37,9 @@ public class SpraySchemaRecorder {
     private static boolean armedInSpraysMenu = false;
     private static final List<SprayEntry> entries = new ArrayList<>();
     private static PendingPreview pendingPreview;
+
+    private SpraySchemaRecorder() {
+    }
 
     public static void start() {
         entries.clear();

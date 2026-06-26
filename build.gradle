@@ -23,10 +23,10 @@ repositories {
 		}
 	}
 	maven {
-		url "https://repo.papermc.io/repository/maven-public/"
+		url = "https://repo.papermc.io/repository/maven-public/"
 	}
 	maven {
-		url "https://repo.hypixel.net/repository/Hypixel/"
+		url = "https://repo.hypixel.net/repository/Hypixel/"
 	}
 	maven {
 		name = 'sonatype-oss-snapshots1'
@@ -84,11 +84,12 @@ dependencies {
 
 tasks.register('copyShadedDependencies', Copy) {
 	from configurations.shaded
-	into "$buildDir/libs/shaded"
+	into layout.buildDirectory.dir('libs/shaded')
 }
 
-// Make the build task depend on copying shaded dependencies
-build.dependsOn copyShadedDependencies
+tasks.named('build') {
+	dependsOn tasks.named('copyShadedDependencies')
+}
 
 // Include shaded dependencies in the JAR
 jar {
@@ -104,11 +105,12 @@ jar {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	options.release = 25
 }
 
 java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 	withSourcesJar()
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
 }

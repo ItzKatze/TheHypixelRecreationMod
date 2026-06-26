@@ -2,6 +2,7 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
@@ -23,10 +24,12 @@ import java.nio.file.Path;
 import java.util.Base64;
 import java.util.zip.GZIPOutputStream;
 
-public class CopyMapTextureCommand {
+public final class CopyMapTextureCommand {
+    private CopyMapTextureCommand() {
+    }
 
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> {
             dispatcher.register(
                 ClientCommands.literal("copymaptexture")
                     .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
@@ -61,12 +64,12 @@ public class CopyMapTextureCommand {
 
                             var entries = frames.stream().map(frame -> {
                                 Vec3 delta = frame.position().subtract(anchor.position());
-                                double sx = delta.dot(right); // left → right
-                                double sy = delta.dot(up);    // bottom → top
+                                double sx = delta.dot(right); // left to right
+                                double sy = delta.dot(up);    // bottom to top
                                 return new Entry(frame, sx, sy);
                             }).toList();
 
-                            // Sort: top → bottom, left → right
+                            // Sort: top to bottom, left to right
                             var sorted = entries.stream()
                                 .sorted((a, b) -> {
                                     int y = Double.compare(b.y, a.y);
@@ -76,6 +79,7 @@ public class CopyMapTextureCommand {
                                 .toList();
 
                             StringBuilder out = new StringBuilder();
+                            int exportedTileCount = 0;
 
                             for (Entry e : sorted) {
                                 ItemStack stack = e.frame.getItem();
@@ -90,7 +94,9 @@ public class CopyMapTextureCommand {
                                 try {
                                     String compressed = compressAndEncode(data.colors);
                                     out.append("\"").append(compressed).append("\",\n");
-                                } catch (IOException ignored) {}
+                                    exportedTileCount++;
+                                } catch (IOException ignored) {
+                                }
                             }
 
                             if (out.isEmpty()) {
@@ -103,13 +109,13 @@ public class CopyMapTextureCommand {
                             Path outputPath = Minecraft.getInstance().gameDirectory.toPath().resolve("map_export.txt");
                             try {
                                 Files.writeString(outputPath, out.toString());
-                                ChatUtils.message("Exported " + sorted.size() + " map tiles to map_export.txt");
+                                ChatUtils.message("Exported " + exportedTileCount + " map tiles to map_export.txt");
                             } catch (IOException e) {
                                 ChatUtils.error("Failed to write file: " + e.getMessage());
                             }
 
-                            client.keyboardHandler.setClipboard(out.toString());
-                            ChatUtils.message("Copied " + sorted.size() + " map tiles to clipboard.");
+                            ClipboardUtils.setClipboard(out.toString());
+                            ChatUtils.message("Copied " + exportedTileCount + " map tiles to clipboard.");
 
                             return 1;
                         })

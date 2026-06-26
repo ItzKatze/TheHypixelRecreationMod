@@ -10,17 +10,23 @@ import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.ArrayList;
 
-public class ItemStackUtils {
+public final class ItemStackUtils {
+    private static final String TEXTURES_PROPERTY = "textures";
+
+    private ItemStackUtils() {
+    }
 
     /**
      * Raw textures property from a player head.
+     *
      * @param valueBase64 the base64-encoded texture JSON (Property#value)
      * @param signatureBase64 optional Mojang signature (Property#signature)
      */
-    public record HeadTextureProperty(String valueBase64, @Nullable String signatureBase64) {}
+    public record HeadTextureProperty(String valueBase64, @Nullable String signatureBase64) {
+    }
 
     /**
      * Extracts the raw "textures" property from a player head.
@@ -42,7 +48,7 @@ public class ItemStackUtils {
         }
 
         Property textureProp = profile.properties()
-                .get("textures")
+                .get(TEXTURES_PROPERTY)
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -52,7 +58,9 @@ public class ItemStackUtils {
         }
 
         String signature = textureProp.signature();
-        if (signature != null && signature.isBlank()) signature = null;
+        if (signature != null && signature.isBlank()) {
+            signature = null;
+        }
 
         return new HeadTextureProperty(textureProp.value(), signature);
     }
@@ -65,22 +73,14 @@ public class ItemStackUtils {
      * }
      */
     public static String buildTexturesPropertiesJson(HeadTextureProperty prop, boolean includeSignatureIfPresent) {
-        // We intentionally keep this simple and escape only what we must.
-        String valueEscaped = prop.valueBase64()
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"");
-
         StringBuilder sb = new StringBuilder();
         sb.append("{\"properties\":[{\"name\":\"textures\",\"value\":\"")
-                .append(valueEscaped)
+                .append(StringUtility.escapeJson(prop.valueBase64()))
                 .append("\"");
 
         if (includeSignatureIfPresent && prop.signatureBase64() != null && !prop.signatureBase64().isEmpty()) {
-            String sigEscaped = prop.signatureBase64()
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"");
             sb.append(",\"signature\":\"")
-                    .append(sigEscaped)
+                    .append(StringUtility.escapeJson(prop.signatureBase64()))
                     .append("\"");
         }
 
@@ -102,7 +102,7 @@ public class ItemStackUtils {
         }
 
         try {
-            String json = new String(Base64.getDecoder().decode(prop.valueBase64()));
+            String json = new String(Base64.getDecoder().decode(prop.valueBase64()), StandardCharsets.UTF_8);
             int start = json.indexOf("http");
             String url = (start >= 0) ? json.substring(start, json.indexOf('"', start)) : "<no URL>";
 
@@ -129,7 +129,7 @@ public class ItemStackUtils {
     public static List<Component> getLore(ItemStack stack) {
         ItemLore loreComponent = stack.get(DataComponents.LORE);
         if (loreComponent == null) {
-            return new ArrayList<>();
+            return List.of();
         }
         return loreComponent.lines();
     }
@@ -139,12 +139,9 @@ public class ItemStackUtils {
      * Returns an empty list if no lore is present.
      */
     public static List<String> getLoreAsStrings(ItemStack stack) {
-        List<Component> loreLines = getLore(stack);
-        List<String> result = new ArrayList<>();
-        for (Component line : loreLines) {
-            result.add(StringUtility.toLegacyString(line));
-        }
-        return result;
+        return getLore(stack).stream()
+                .map(StringUtility::toLegacyString)
+                .toList();
     }
 
     public static String getDisplayNameLegacy(ItemStack stack) {

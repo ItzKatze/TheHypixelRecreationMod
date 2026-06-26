@@ -36,6 +36,9 @@ public final class SoundNbsRecorder {
     private static int previousTick;
     private static int ignoredSoundCount;
 
+    private SoundNbsRecorder() {
+    }
+
     public static void start() {
         if (active) {
             throw new IllegalStateException("An NBS recording is already active.");

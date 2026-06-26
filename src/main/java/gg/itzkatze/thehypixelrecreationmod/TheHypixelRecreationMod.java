@@ -12,7 +12,7 @@ import net.hypixel.modapi.packet.impl.clientbound.event.ClientboundLocationPacke
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TheHypixelRecreationMod implements ClientModInitializer {
+public final class TheHypixelRecreationMod implements ClientModInitializer {
 	public static final String MOD_ID = "thehypixelrecreationmod";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -20,7 +20,13 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 	public void onInitializeClient() {
 		LOGGER.info("Initialized");
 
-		// Commands
+		registerCommands();
+		KeybindRegistry.register();
+		registerTickHandlers();
+		registerHypixelApiHandlers();
+	}
+
+	private static void registerCommands() {
 		PlayerSkinCommand.register();
 		GetArmorStandArmorColorsCommand.register();
 		GetArmorStandInfos.register();
@@ -31,24 +37,22 @@ public class TheHypixelRecreationMod implements ClientModInitializer {
 		FetchBlockDisplaysCommand.register();
 		SpraySchemaRecorderCommand.register();
 		SoundNbsRecorderCommand.register();
+	}
 
-		// Keybinds
-		new KeybindRegistry().onInitializeClient();
-
-		// Region tracking system
+	private static void registerTickHandlers() {
 		ClientTickEvents.END_CLIENT_TICK.register(_ -> {
 			ChunkExportRecorder.tick();
 			SpraySchemaRecorder.tick();
 		});
+	}
 
+	private static void registerHypixelApiHandlers() {
 		HypixelModAPI.getInstance().subscribeToEventPacket(ClientboundLocationPacket.class);
 
-		HypixelModAPICallback.EVENT.register(clientboundHypixelPacket -> {
-			LOGGER.info("ClientboundHypixelPacket: " + clientboundHypixelPacket.toString());
-		});
+		HypixelModAPICallback.EVENT.register(clientboundHypixelPacket ->
+				LOGGER.info("ClientboundHypixelPacket: {}", clientboundHypixelPacket));
 
-		HypixelModAPI.getInstance().registerHandler(ClientboundLocationPacket.class, packet -> {
-			LOGGER.info("ClientboundLocationPacket: " + packet.toString());
-		});
+		HypixelModAPI.getInstance().createHandler(ClientboundLocationPacket.class, packet ->
+				LOGGER.info("ClientboundLocationPacket: {}", packet));
 	}
 }

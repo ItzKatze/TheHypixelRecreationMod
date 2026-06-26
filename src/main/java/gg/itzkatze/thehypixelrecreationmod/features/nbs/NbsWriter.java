@@ -15,6 +15,9 @@ public final class NbsWriter {
     public static final int VANILLA_INSTRUMENT_COUNT = 16;
     public static final int TEMPO = 20;
 
+    private NbsWriter() {
+    }
+
     public static void write(Path path, String songName, List<Note> notes, List<CustomInstrument> customInstruments)
             throws IOException {
         Files.createDirectories(path.getParent());

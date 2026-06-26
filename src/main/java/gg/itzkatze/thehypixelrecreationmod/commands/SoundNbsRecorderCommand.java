@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.network.chat.Component;
 
 public final class SoundNbsRecorderCommand {
+    private SoundNbsRecorderCommand() {
+    }
 
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> dispatcher.register(

@@ -27,8 +27,5 @@
 		"java": ">=25",
 		"fabric-api": "*",
 		"hypixel-mod-api": ">=1.0.1"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

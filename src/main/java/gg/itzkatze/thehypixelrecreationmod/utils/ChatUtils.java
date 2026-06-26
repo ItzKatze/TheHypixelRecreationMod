@@ -5,51 +5,41 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 
-public class ChatUtils {
+public final class ChatUtils {
+    private static final Style LINE_STYLE = Style.EMPTY.withBold(true).withColor(TextColor.fromRgb(0xFFD700));
+    private static final Style LOG_STYLE = Style.EMPTY.withColor(TextColor.fromRgb(0x808080));
+    private static final Style ERROR_STYLE = Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000));
+    private static final Style WARN_STYLE = Style.EMPTY.withColor(TextColor.fromRgb(0xFFFF00));
+
+    private ChatUtils() {
+    }
 
     public static void sendLine() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-        mc.player.sendSystemMessage(
-                Component.literal("------------------------------------")
-                        .withStyle(Style.EMPTY.withBold(true).withColor(TextColor.fromRgb(0xFFD700)))
-        );
+        send(Component.literal("------------------------------------").withStyle(LINE_STYLE));
     }
 
     public static void message(String message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-
-        mc.player.sendSystemMessage(Component.literal(message));
+        send(Component.literal(message));
     }
 
     public static void log(String message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-
-        mc.player.sendSystemMessage(
-                Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x808080)))
-        );
+        send(Component.literal(message).withStyle(LOG_STYLE));
     }
 
     public static void error(String message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-
-        mc.player.sendSystemMessage(
-                Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFF0000)))
-        );
+        send(Component.literal(message).withStyle(ERROR_STYLE));
     }
 
     public static void warn(String message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
+        send(Component.literal(message).withStyle(WARN_STYLE));
+    }
 
-        mc.player.sendSystemMessage(
-                Component.literal(message)
-                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFFF00)))
-        );
+    public static void send(Component component) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
+            return;
+        }
+
+        client.player.sendSystemMessage(component);
     }
 }

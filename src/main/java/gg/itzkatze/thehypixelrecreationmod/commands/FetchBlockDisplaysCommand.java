@@ -3,6 +3,8 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.math.Transformation;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.StringUtility;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
@@ -20,7 +22,6 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaternionfc;
 import org.joml.Vector3fc;
 
@@ -114,7 +115,7 @@ public final class FetchBlockDisplaysCommand {
         }
 
         final var export = buildExport(exportedEntities, origin);
-        client.keyboardHandler.setClipboard(export);
+        ClipboardUtils.setClipboard(export);
 
         final Path outputPath = client.gameDirectory.toPath().resolve("block_displays_export.json");
         try {
@@ -162,7 +163,7 @@ public final class FetchBlockDisplaysCommand {
         final var fieldIndent = "  ".repeat(indentLevel + 1);
         final List<String> fields = new ArrayList<>();
 
-        fields.add(fieldIndent + "\"type\": \"" + escapeJson(EntityType.getKey(entity.getType()).toString()) + "\"");
+        fields.add(fieldIndent + "\"type\": \"" + StringUtility.escapeJson(EntityType.getKey(entity.getType()).toString()) + "\"");
         fields.add(fieldIndent + "\"position\": " + deltaPositionToJson(entity, origin));
         fields.add(fieldIndent + "\"rotation\": {\"yaw\": " + entity.getYRot() + ", \"pitch\": " + entity.getXRot() + "}");
 
@@ -215,9 +216,9 @@ public final class FetchBlockDisplaysCommand {
                 .orElse("minecraft:air")
             : "minecraft:air";
 
-        fields.add(fieldIndent + "\"id\": \"" + escapeJson(blockId) + "\"");
+        fields.add(fieldIndent + "\"id\": \"" + StringUtility.escapeJson(blockId) + "\"");
         if (blockState != null) {
-            fields.add(fieldIndent + "\"blockState\": \"" + escapeJson(blockState.toString()) + "\"");
+            fields.add(fieldIndent + "\"blockState\": \"" + StringUtility.escapeJson(blockState.toString()) + "\"");
         }
     }
 
@@ -281,7 +282,7 @@ public final class FetchBlockDisplaysCommand {
                 continue;
             }
 
-            entries.add("\"" + escapeJson(slot.getName()) + "\": " + itemStackToJson(stack));
+            entries.add("\"" + StringUtility.escapeJson(slot.getName()) + "\": " + itemStackToJson(stack));
         }
         return "{" + String.join(", ", entries) + "}";
     }
@@ -295,7 +296,7 @@ public final class FetchBlockDisplaysCommand {
             .orElse("minecraft:air");
 
         out.append("\"id\": \"")
-            .append(escapeJson(itemId))
+            .append(StringUtility.escapeJson(itemId))
             .append("\"");
         out.append(", \"count\": ").append(stack.getCount());
 
@@ -307,24 +308,11 @@ public final class FetchBlockDisplaysCommand {
             .result()
             .orElse(new CompoundTag());
         out.append(", \"snbt\": \"")
-            .append(escapeJson(encodedTag.toString()))
+            .append(StringUtility.escapeJson(encodedTag.toString()))
             .append("\"");
 
         out.append("}");
         return out.toString();
-    }
-
-    private static String blockStateToJson(BlockState blockState) {
-        // to avoid depending on the exact property API shape across mappings, serialize a simple string
-        return "{\"state\": \"" + escapeJson(blockState.toString()) + "\"}";
-    }
-
-    private static String escapeJson(String value) {
-        return value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r");
     }
 
     private record ExportOrigin(double x, double y, double z) {

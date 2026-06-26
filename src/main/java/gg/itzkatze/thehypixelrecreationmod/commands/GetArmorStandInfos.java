@@ -2,8 +2,8 @@ package gg.itzkatze.thehypixelrecreationmod.commands;
 
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import gg.itzkatze.thehypixelrecreationmod.utils.ChatUtils;
+import gg.itzkatze.thehypixelrecreationmod.utils.ClipboardUtils;
 import gg.itzkatze.thehypixelrecreationmod.utils.ItemStackUtils;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.minecraft.client.Minecraft;
@@ -11,7 +11,6 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -19,13 +18,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GetArmorStandInfos {
+public final class GetArmorStandInfos {
+    private GetArmorStandInfos() {
+    }
+
     public static void register() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, _) -> {
             dispatcher.register(
                     ClientCommands.literal("getarmorstandinfos")
                             .then(ClientCommands.argument("radius", DoubleArgumentType.doubleArg(0))
@@ -63,7 +65,7 @@ public class GetArmorStandInfos {
     }
 
     private static void processArmorStand(Minecraft client, ArmorStand armorStand) {
-        Map<String, ItemStack> stacks = new HashMap<>();
+        Map<String, ItemStack> stacks = new LinkedHashMap<>();
         stacks.put("Head", armorStand.getItemBySlot(EquipmentSlot.HEAD));
         stacks.put("Chest", armorStand.getItemBySlot(EquipmentSlot.CHEST));
         stacks.put("Legs", armorStand.getItemBySlot(EquipmentSlot.LEGS));
@@ -72,9 +74,6 @@ public class GetArmorStandInfos {
         stacks.put("Offhand", armorStand.getItemBySlot(EquipmentSlot.OFFHAND));
 
         ChatUtils.sendLine();
-
-        Player player = client.player;
-        if (player == null) return;
 
         Component coordsMessage = Component.literal(
                         "Cords: X: " + armorStand.getX()
@@ -95,7 +94,7 @@ public class GetArmorStandInfos {
                         )
                 );
 
-        player.sendSystemMessage(coordsMessage);
+        ChatUtils.send(coordsMessage);
 
         for (Map.Entry<String, ItemStack> entry : stacks.entrySet()) {
             String name = entry.getKey();
@@ -107,21 +106,17 @@ public class GetArmorStandInfos {
 
             if (stack.is(Items.PLAYER_HEAD)) {
                 String textureId = ItemStackUtils.getPlayerHeadTexture(stack);
-                client.keyboardHandler.setClipboard(textureId);
+                ClipboardUtils.setClipboard(textureId);
 
-                player.sendSystemMessage(
-                        Component.literal("Copied Texture-ID: ")
-                                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x55FFFF)))
-                );
+                ChatUtils.send(Component.literal("Copied Texture-ID: ")
+                        .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x55FFFF))));
 
-                player.sendSystemMessage(
-                        Component.literal(textureId)
-                                .withStyle(
-                                        Style.EMPTY.withClickEvent(
-                                                new ClickEvent.CopyToClipboard(textureId)
-                                        )
+                ChatUtils.send(Component.literal(textureId)
+                        .withStyle(
+                                Style.EMPTY.withClickEvent(
+                                        new ClickEvent.CopyToClipboard(textureId)
                                 )
-                );
+                        ));
             }
         }
 

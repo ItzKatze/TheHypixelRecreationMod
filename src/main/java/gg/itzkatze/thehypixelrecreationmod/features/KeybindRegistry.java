@@ -1,21 +1,22 @@
 package gg.itzkatze.thehypixelrecreationmod.features;
 
-import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 
-public class KeybindRegistry implements ClientModInitializer {
+public final class KeybindRegistry {
     public static KeyMapping checkSkinKey;
     public static KeyMapping copyLoreKey;
     public static KeyMapping copyChatKey;
     public static KeyMapping copyGuiKey;
     private static boolean chatCopyPressed = false;
 
-    @Override
-    public void onInitializeClient() {
+    private KeybindRegistry() {
+    }
+
+    public static void register() {
         checkSkinKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.thehypixelrecreationmod.copyplayerheadskin",
                 GLFW.GLFW_KEY_K,
