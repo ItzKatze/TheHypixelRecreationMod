@@ -37,6 +37,7 @@ public final class TheHypixelRecreationMod implements ClientModInitializer {
 		FetchBlockDisplaysCommand.register();
 		SpraySchemaRecorderCommand.register();
 		SoundNbsRecorderCommand.register();
+		HeldItemDataCommand.register();
 	}
 
 	private static void registerTickHandlers() {
